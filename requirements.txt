@@ -1,0 +1,15 @@
+Django==1.5.2
+Mako==1.0.0
+MarkupSafe==0.23
+Twisted==14.0.2
+decorator==3.4.0
+fnss==0.5.0
+gnureadline==6.3.3
+ipdb==0.8
+ipython==2.2.0
+networkx==1.9.1
+numpy==1.9.0
+six==1.8.0
+txWS==0.9.1
+wsgiref==0.1.2
+zope.interface==4.1.1
