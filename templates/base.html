@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    {% block scripts %}
+
+    <!-- stylesheets -->
+    <link rel="stylesheet" href="{{ STATIC_URL }}css/main.css" />
+
+    <!-- jQuery sources -->
+    <script src="{{ STATIC_URL }}js/jquery-1.10.2.js"></script>
+    <script src="{{ STATIC_URL }}js/jquery.cookie.js"></script>
+
+    <!-- app specific sources -->
+    <script src="{{ STATIC_URL }}js/main.js"></script>
+    <script src="{{ STATIC_URL }}js/communication.js"></script>
+
+    <!-- favicon -->
+    <link rel="shortcut icon" href="{{ STATIC_URL }}img/favicon_best.ico" type="image/x-icon">
+    <link rel="icon" href="{{ STATIC_URL }}img/favicon_best.ico" type="image/x-icon">
+
+    {% endblock scripts %}
+
+    <title>{% block title %}{% endblock %}</title>
+</head>
+<body>
+{% block body %}
+{% endblock body %}
+</body>
+</html>

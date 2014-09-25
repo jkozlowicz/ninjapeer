@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block body %}
+<div id="main_container" class="container">
+    {% block navbar %}
+    {% endblock navbar %}
+
+    <div id="content_container" class="col-lg-12">
+    {% block content %}
+        <h1>Join a table and start playing poker now.</h1>
+        </br>
+        <h2>You can find a list of tables in our lobby.</h2>
+        <br>
+        <a href="/poker/lobby">Go to lobby</a>
+    {% endblock content %}
+    </div>
+
+</div>
+{% endblock body %}
