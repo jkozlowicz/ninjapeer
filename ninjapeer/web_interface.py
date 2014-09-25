@@ -75,16 +75,23 @@ class Homepage(Resource):
 
 
 class WebInterfaceProtocol(protocol.Protocol):
+    def __init__(self, factory):
+        self.factory = factory
+
     def connectionMade(self):
-        #handle incoming commands
         pass
 
     def dataReceived(self, data):
+        #handle incoming commands
         print data
 
 
 class WebInterfaceFactory(protocol.Factory):
     protocol = WebInterfaceProtocol
+
+    def __init__(self, node):
+        self.node = node
+        self.node.web_service = self
 
     def buildProtocol(self, addr):
         return WebInterfaceProtocol()
