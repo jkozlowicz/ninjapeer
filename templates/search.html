@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% block content %}
 
-<form class="form-horizontal" role="form">
+<form class="form-horizontal" role="form" id="query-form">
   <div class="form-group">
     <div class="col-sm-10" id="search-box-container">
       <input type="text" class="form-control input-lg" id="inputQuery">
@@ -10,6 +10,11 @@
       <button type="submit" class="btn btn-default btn-lg btn-block">Search</button>
     </div>
   </div>
+
+    <div id="loading-img-container" class="img-centered hidden">
+        <img class="img-centered" src="{{ STATIC_URL }}img/loading.GIF" />
+    </div>
+
 </form>
 
 {% endblock content %}

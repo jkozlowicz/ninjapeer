@@ -5,6 +5,8 @@ import django.template.loader
 
 from django.conf import settings
 
+import json
+
 from twisted.web.resource import Resource
 from twisted.internet import protocol
 
@@ -74,13 +76,19 @@ class Homepage(Resource):
 
 
 class WebInterfaceProtocol(protocol.Protocol):
+    def __init__(self, factory):
+        self.factory = factory
+
     def connectionMade(self):
         pass
 
     def dataReceived(self, data):
-        #handle incoming commands
         self.transport.write(data)
-        print data
+        rcvd_data = json.loads(data)
+        action, val = rcvd_data['action'], rcvd_data['value']
+        if action == 'QUERY':
+            self.factory.node.msg_service.query_received(val)
+        print rcvd_data
 
 
 class WebInterfaceFactory(protocol.Factory):
@@ -91,4 +99,4 @@ class WebInterfaceFactory(protocol.Factory):
         self.node.web_service = self
 
     def buildProtocol(self, addr):
-        return WebInterfaceProtocol()
+        return WebInterfaceProtocol(self)

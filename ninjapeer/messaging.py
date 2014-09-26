@@ -28,6 +28,7 @@ class MessagingProtocol(protocol.DatagramProtocol):
         pass
 
     def query_received(self, query):
+        print 'Messaging protocol received query'
         pass
 
     def datagramReceived(self, datagram, addr):
