@@ -17,3 +17,35 @@
     margin-left: auto;
     margin-right: auto
 }
+
+#loading-img-container {
+  padding-top: 50px;
+}
+
+#query-result-table-header th,
+#home-items-table-header th,
+{
+  text-align: center;
+}
+
+.table tbody>tr>td.vert-align
+{
+    vertical-align: middle;
+}
+
+//Overwriting bootstrap's progress margin-bottom for proper display in a table row
+.progress {
+  margin-bottom: 0px !important;
+}
+
+#query-result-table th:first-of-type, td:first-of-type{
+  width: 70%;
+}
+
+#home-items-table th:first-of-type, td:first-of-type{
+  width: 50%;
+}
+
+.glyphicon-big{
+  font-size: 2.0em;
+}

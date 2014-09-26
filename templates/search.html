@@ -11,9 +11,43 @@
     </div>
   </div>
 
+    <div id="query-result-table-container hidden">
+        <table class="table table-striped" id="query-result-table">
+            <thead id="query-result-table-header">
+                <th>Name</th>
+                <th>Date</th>
+                <th>Size</th>
+                <th></th>
+            </thead>
+            <tbody>
+                <tr class="result-item">
+                    <td class="vert-align result-name">aaaa</td>
+                    <td class="vert-align result-date">aaaa</td>
+                    <td class="vert-align result-size">aaa</td>
+                    <td class="vert-align text-center">
+                        <a href="#" class="download-file xx">
+                            <span class="glyphicon glyphicon-download glyphicon-big"></span>
+                        </a>
+                    </td>
+                </tr>
+                <tr class="result-item">
+                    <td class="vert-align result-name">bbbb</td>
+                    <td class="vert-align result-date">bbbb</td>
+                    <td class="vert-align result-size">bbbb</td>
+                    <td class="vert-align text-center">
+                        <a href="#" class="download-file yy">
+                            <span class="glyphicon glyphicon-download glyphicon-big"></span>
+                        </a>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
     <div id="loading-img-container" class="img-centered hidden">
         <img class="img-centered" src="{{ STATIC_URL }}img/loading.GIF" />
     </div>
+
 
 </form>
 
