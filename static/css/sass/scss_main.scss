@@ -1,10 +1,13 @@
-#chat-box {
-    position: absolute;
-    resize: none;
+.center-content {
+  width: 960px;
+  margin: 0 auto;
 }
 
-.card-back
-{
-    border-width: 1px;
-    border-color: white;
+#search-box-container,
+#search-btn-container {
+  display: inline;
+}
+
+#content-container {
+  padding-top: 40px;
 }

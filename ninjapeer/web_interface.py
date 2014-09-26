@@ -57,12 +57,11 @@ def render(name, *values):
     return template.render(ctx)
 
 
-class Lobby(Resource):
+class Search(Resource):
     isLeaf = True
 
     def render_GET(self, request):
-        tables = []
-        content = render('lobby.html', {"num_tables": tables})
+        content = render('search.html')
         return str(content)
 
 
@@ -75,14 +74,12 @@ class Homepage(Resource):
 
 
 class WebInterfaceProtocol(protocol.Protocol):
-    def __init__(self, factory):
-        self.factory = factory
-
     def connectionMade(self):
         pass
 
     def dataReceived(self, data):
         #handle incoming commands
+        self.transport.write(data)
         print data
 
 

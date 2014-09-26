@@ -7,7 +7,7 @@ from util import AddressService
 import os
 
 MSG_PORT = 8890
-PING_INTERVAL = 0.1
+PING_INTERVAL = 0.3
 MIN_PEER_NUM = 3
 
 

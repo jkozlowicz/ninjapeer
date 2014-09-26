@@ -8,10 +8,14 @@
 
     <!-- stylesheets -->
     <link rel="stylesheet" href="{{ STATIC_URL }}css/main.css" />
+    <link rel="stylesheet" href="{{ STATIC_URL }}css/bootstrap.min.css" />
+    <link rel="stylesheet" href="{{ STATIC_URL }}css/bootstrap-theme.min.css"/>
 
     <!-- jQuery sources -->
-    <script src="{{ STATIC_URL }}js/jquery-1.10.2.js"></script>
-    <script src="{{ STATIC_URL }}js/jquery.cookie.js"></script>
+    <script src="{{ STATIC_URL }}js/jquery.min.js"></script>
+
+    <!-- bootstrap sources -->
+    <script src="{{ STATIC_URL }}js/bootstrap.min.js"></script>
 
     <!-- app specific sources -->
     <script src="{{ STATIC_URL }}js/main.js"></script>
@@ -26,7 +30,18 @@
     <title>{% block title %}{% endblock %}</title>
 </head>
 <body>
-{% block body %}
-{% endblock body %}
+    <div class="center-content">
+        <nav class="navbar navbar-default" role="navigation">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="#">Home</a>
+                <a class="navbar-brand" href="#">Search</a>
+            </div>
+        </nav>
+
+        <div id="content-container">
+            {% block content %}
+            {% endblock content %}
+        </div>
+    </div>
 </body>
 </html>

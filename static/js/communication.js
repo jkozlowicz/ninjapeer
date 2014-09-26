@@ -1,7 +1,8 @@
 var websockAddr = "ws://127.0.0.1:8888";
+var websocket = null;
 
 function init() {
-    var websocket = new WebSocket(websockAddr);
+    websocket = new WebSocket(websockAddr);
     websocket.onopen = function(e) { onOpen(e) };
     websocket.onmessage = function(e) { onMessage(e) };
     websocket.onerror = function(evt) { onError(evt) };
