@@ -1,16 +1,16 @@
 __author__ = 'jkozlowicz'
 
-import django.template
-import django.template.loader
-
 from django.conf import settings
 
-import json
+from ninjapeer.util import TEMPLATE_DIRS, STATIC_PATH
 
 from twisted.web.resource import Resource
 from twisted.internet import protocol
 
-import os
+import django.template
+import django.template.loader
+
+import json
 
 """
 Sets environment variables to correct paths.
@@ -18,9 +18,6 @@ Sets environment variables to correct paths.
 Configures Django settings with environment variables so that
 Django templates work properly.
 """
-PROJECT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-STATIC_PATH = PROJECT_PATH + '/static/'
-TEMPLATE_DIRS = (PROJECT_PATH + '/templates/', )
 settings.configure(
     DEBUG=True,
     TEMPLATED_DEBUG=True,

@@ -11,7 +11,7 @@ import os
 import uuid
 
 MSG_PORT = 8890
-PING_INTERVAL = 0.3
+PING_INTERVAL = 1
 MIN_PEER_NUM = 3
 
 
@@ -27,7 +27,7 @@ class MessagingProtocol(protocol.DatagramProtocol):
         self.ping_loop = task.LoopingCall(self.send_ping)
         self.start_pinging()
         task2 = task.LoopingCall(self.display_connections)
-        task2.start(1, now=False)
+        task2.start(PING_INTERVAL, now=False)
 
     def display_connections(self):
         print self.node.peers
@@ -49,7 +49,7 @@ class MessagingProtocol(protocol.DatagramProtocol):
         if len(self.node.peers) >= MIN_PEER_NUM and self.ping_loop.running:
             self.ping_loop.stop()
         else:
-            self.ping_loop.start()
+            self.ping_loop.start(PING_INTERVAL)
 
     def query_received(self, query):
         print 'Messaging protocol received query'

@@ -1,5 +1,14 @@
+from twisted.protocols.basic import FileSender
+
 __author__ = 'Kuba'
 import random
+
+import os
+
+PROJECT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+STATIC_PATH = PROJECT_PATH + '/static/'
+TEMPLATE_DIRS = (PROJECT_PATH + '/templates/', )
+STORAGE_DIR = PROJECT_PATH + '/storage/'
 
 
 class AddressService(object):
