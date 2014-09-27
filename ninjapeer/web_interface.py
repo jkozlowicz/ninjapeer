@@ -2,7 +2,7 @@ __author__ = 'jkozlowicz'
 
 from django.conf import settings
 
-from ninjapeer.util import TEMPLATE_DIRS, STATIC_PATH
+from util import TEMPLATE_DIRS, STATIC_PATH
 
 from twisted.web.resource import Resource
 from twisted.internet import protocol
