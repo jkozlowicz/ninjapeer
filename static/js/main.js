@@ -18,15 +18,33 @@ $(document).ready(function(){
     });
 
     $(".download-file").click(onClickDownloadFile);
+    $(".stop-download-file").click(onClickStopDownloadFile);
+    $(".delete-file").click(onClickDeleteFile);
 
 });
 
-var onClickDownloadFile = function(event){
-    var currRow = $(this).parent().parent();
-    var fileName = currRow.find('.result-name').textContent;
+var getFileName = function(elem){
+    /** currRow stores reference to parent <tr> element*/
+    var currRow = $(elem).parent().parent();
+    return currRow.find('.result-name')[0].textContent;
+};
+
+var onClickStopDownloadFile = function(){
+    sendAction("STOP_DOWNLOAD", getFileName(this));
+};
+
+var onClickDeleteFile = function(){
+    sendAction("DELETE_FILE", getFileName(this));
+};
+
+var onClickDownloadFile = function(){
+    sendAction("DOWNLOAD", getFileName(this));
+};
+
+var sendAction = function(action, value){
     var data = {
-        "action": "DOWNLOAD",
-        "value": fileName
+        "action": action,
+        "value": value
     };
     var json_str = JSON.stringify(data);
     websocket.send(json_str);

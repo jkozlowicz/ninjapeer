@@ -24,6 +24,7 @@ class MessagingProtocol(protocol.DatagramProtocol):
 
     def startProtocol(self):
         print 'Starting node'
+        print self.transport.getHost()
         self.ping_loop = task.LoopingCall(self.send_ping)
         self.start_pinging()
         task2 = task.LoopingCall(self.display_connections)
