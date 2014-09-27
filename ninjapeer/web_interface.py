@@ -85,10 +85,14 @@ class WebInterfaceProtocol(protocol.Protocol):
     def dataReceived(self, data):
         self.transport.write(data)
         rcvd_data = json.loads(data)
+        print rcvd_data
         action, val = rcvd_data['action'], rcvd_data['value']
         if action == 'QUERY':
-            self.factory.node.msg_service.query_received(val)
-        print rcvd_data
+            self.factory.node.msg_service.send_query(val)
+        elif action == 'DOWNLOAD':
+            self.factory.node.msg_service.send_download_request(val)
+        else:
+            pass
 
 
 class WebInterfaceFactory(protocol.Factory):
