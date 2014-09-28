@@ -159,4 +159,10 @@ class MessagingProtocol(protocol.DatagramProtocol):
         pass
 
     def if_msg_duplicated(self, datagram):
-        return datagram['MSG_ID'] in self.message_bag
+        try:
+            duplicated = datagram['MSG_ID'] in self.message_bag
+            return duplicated
+        except KeyError:
+            print '=========='
+            print datagram
+            print '=========='
