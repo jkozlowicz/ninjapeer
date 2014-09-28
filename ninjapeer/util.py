@@ -11,6 +11,17 @@ TEMPLATE_DIRS = (PROJECT_PATH + '/templates/', )
 STORAGE_DIR = PROJECT_PATH + '/storage/'
 
 
+def get_machine_ip():
+    from sys import platform as _platform
+    interface = ''
+    if _platform == 'darwin':
+        interface = 'en1'
+    else:
+        interface = 'eth1'
+    import netifaces
+    return netifaces.ifaddresses(interface)[2][0]['addr']
+
+
 class AddressService(object):
     def __init__(self):
         self.hosts = None

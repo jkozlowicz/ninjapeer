@@ -13,3 +13,4 @@ six==1.8.0
 txWS==0.9.1
 wsgiref==0.1.2
 zope.interface==4.1.1
+netifaces==0.10.4

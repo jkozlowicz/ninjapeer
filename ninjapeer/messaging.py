@@ -11,7 +11,7 @@ import os
 import uuid
 
 MSG_PORT = 8890
-PING_INTERVAL = 1
+PING_INTERVAL = 0.1
 MIN_PEER_NUM = 3
 
 
@@ -24,7 +24,6 @@ class MessagingProtocol(protocol.DatagramProtocol):
 
     def startProtocol(self):
         print 'Starting node'
-        print self.transport.getHost()
         self.ping_loop = task.LoopingCall(self.send_ping)
         self.start_pinging()
         task2 = task.LoopingCall(self.display_connections)
@@ -35,10 +34,15 @@ class MessagingProtocol(protocol.DatagramProtocol):
 
     def ping_received(self, addr):
         host, port = addr
+        if host == self.node.host:
+            self.discard_msg()
         if host not in self.node.peers:
             self.node.peers[host] = ''
             self.peers_updated()
-        self.transport.write('PONG', (host, MSG_PORT))
+        msg = json.dumps({
+            'MSG': 'PONG',
+        })
+        self.transport.write(msg, (host, MSG_PORT))
 
     def pong_received(self, addr):
         host, port = addr
@@ -49,7 +53,7 @@ class MessagingProtocol(protocol.DatagramProtocol):
     def peers_updated(self):
         if len(self.node.peers) >= MIN_PEER_NUM and self.ping_loop.running:
             self.ping_loop.stop()
-        else:
+        elif len(self.node.peers) < MIN_PEER_NUM and not self.ping_loop.running:
             self.ping_loop.start(PING_INTERVAL)
 
     def query_received(self, query):
@@ -88,5 +92,9 @@ class MessagingProtocol(protocol.DatagramProtocol):
         else:
             msg = json.dumps({
                 'MSG': 'PING',
+                'ID': uuid.uuid4().get_hex()
             })
             self.transport.write(msg, (addr, MSG_PORT))
+
+    def discard_msg(self):
+        pass
