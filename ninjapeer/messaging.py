@@ -45,16 +45,14 @@ class MessagingProtocol(protocol.DatagramProtocol):
         print 'Starting node'
         self.ping_loop = task.LoopingCall(self.send_ping)
         self.start_pinging()
-        # task2 = task.LoopingCall(self.display_connections)
-        # task2.start(PING_INTERVAL, now=False)
+        task2 = task.LoopingCall(self.display_connections)
+        task2.start(7, now=False)
 
     def display_connections(self):
         print self.node.peers
 
     def ping_received(self, addr):
         host, port = addr
-        if host == self.node.host:
-            self.discard_msg()
         if host not in self.node.peers:
             self.node.peers[host] = ''
             self.peers_updated()
@@ -83,6 +81,10 @@ class MessagingProtocol(protocol.DatagramProtocol):
         pass
 
     def datagramReceived(self, datagram, addr):
+        host, port = addr
+        if host == self.node.host:
+            self.discard_msg()
+            return
         datagram = json.loads(datagram)
         if self.if_msg_duplicated(datagram):
             self.discard_msg()
@@ -129,6 +131,7 @@ class MessagingProtocol(protocol.DatagramProtocol):
                 'MSG_ID': uuid.uuid4().get_hex()
             })
             self.transport.write(msg, (host, MSG_PORT))
+        datagram = json.dumps(datagram)
         for peer in self.node.peers:
             self.transport.write(datagram, (peer, MSG_PORT))
 
