@@ -88,8 +88,10 @@ class MessagingProtocol(protocol.DatagramProtocol):
         datagram = json.loads(datagram)
         if self.if_msg_duplicated(datagram):
             self.discard_msg()
+            return
         else:
             self.message_bag[datagram['MSG_ID']] = 1
+            import ipdb;ipdb.set_trace()
         host, port = addr
         print 'Received msg:{0} from:{1} on port:{2}'.format(
             datagram, host, port

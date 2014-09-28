@@ -37,8 +37,6 @@ def get_file_info(filename):
     file_info['hash'] = file_info['hash'].hexdigest()
     return file_info
 
-print get_file_info('node.py')
-
 
 def init_storage():
     if not os.path.exists(STORAGE_DIR):
