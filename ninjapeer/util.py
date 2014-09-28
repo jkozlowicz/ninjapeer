@@ -1,5 +1,3 @@
-from twisted.protocols.basic import FileSender
-
 __author__ = 'Kuba'
 import random
 
