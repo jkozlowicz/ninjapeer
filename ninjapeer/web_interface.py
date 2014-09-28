@@ -75,12 +75,12 @@ class Homepage(Resource):
 class WebInterfaceProtocol(protocol.Protocol):
     def __init__(self, factory):
         self.factory = factory
+        self.factory.web_sock = self
 
     def connectionMade(self):
         pass
 
     def dataReceived(self, data):
-        self.transport.write(data)
         rcvd_data = json.loads(data)
         print rcvd_data
         action, val = rcvd_data['action'], rcvd_data['value']
@@ -91,11 +91,22 @@ class WebInterfaceProtocol(protocol.Protocol):
         else:
             pass
 
+    def display_query_match(self, datagram):
+        files_info = datagram['INFO']
+        owner = datagram['NODE_ID']
+        msg = json.dumps({
+            'FILENAME': files_info['name'],
+            'SIZE': files_info['name'],
+            'SUBMISSION_DATE': '30.09.2014',
+        })
+        self.transport.write(msg)
+
 
 class WebInterfaceFactory(protocol.Factory):
     protocol = WebInterfaceProtocol
 
     def __init__(self, node):
+        self.web_sock = None
         self.node = node
         self.node.web_service = self
 

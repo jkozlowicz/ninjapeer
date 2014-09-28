@@ -1,3 +1,4 @@
 .idea*
 static/css/.sass-cache
 *.pyc
+storage

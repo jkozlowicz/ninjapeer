@@ -1,4 +1,5 @@
 __author__ = 'jkozlowicz'
+from file_sharing import FileSharingService, RPC_PORT
 
 from twisted.internet import reactor, protocol
 from twisted.web.server import Site, Session
@@ -21,10 +22,12 @@ if __name__ == "__main__":
     root.putChild("static", File(STATIC_PATH))
     root.putChild("home", homepage)
     root.putChild("search", search_page)
+    file_sharing_service = FileSharingService()
     website = Site(root)
     ninjanode = NinjaNode()
     web_interface = WebSocketFactory(WebInterfaceFactory(ninjanode))
     reactor.listenTCP(WEBSOCK_PORT, web_interface)
     reactor.listenTCP(8000, website)
     reactor.listenUDP(MSG_PORT, MessagingProtocol(ninjanode))
+    reactor.listenTCP(RPC_PORT, Site(file_sharing_service), interface='0.0.0.0')
     reactor.run()
