@@ -90,7 +90,7 @@ class MessagingProtocol(protocol.DatagramProtocol):
         elif datagram['MSG'] == 'PONG':
             self.pong_received(addr)
         else:
-            self.node.add_route(datagram['NODE_ID', host])
+            self.node.add_route(datagram['NODE_ID'], host)
             if datagram['MSG'] == 'QUERY':
                 self.query_received(addr, datagram)
             elif datagram['MSG'] == 'MATCH':
@@ -116,6 +116,7 @@ class MessagingProtocol(protocol.DatagramProtocol):
         host, port = addr
         matching_files = file_sharing.handle_query(datagram['QUERY'])
         if matching_files:
+            print 'Sending MATCH'
             files_info = file_sharing.get_files_info(matching_files)
             print 'Sending query'
             msg = json.dumps({
@@ -133,14 +134,13 @@ class MessagingProtocol(protocol.DatagramProtocol):
     def match_received(self, addr, datagram):
         print 'Received MATCH'
         host, port = addr
-        _datagram = json.loads(datagram)
-        recipient = _datagram['RECIPIENT']
+        recipient = datagram['RECIPIENT']
         if recipient == self.node.id:
             print 'Delivering query match'
-            self.node.interface.display_match(_datagram)
+            self.node.interface.display_match(datagram)
         else:
             print 'Passing match further'
-            self.transport.write(datagram, (host, MSG_PORT))
+            self.transport.write(json.dumps(datagram), (host, MSG_PORT))
 
     def send_query(self, query):
         print 'Sending query'

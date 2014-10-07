@@ -21,14 +21,14 @@ def read_chunks(file_obj):
         yield chunk
 
 
-def get_file_info(file_name):
+def get_file_info(f_path, f_name):
     file_info = {
-        'name': file_name,
+        'name': f_name,
         'hash': hashlib.md5(),
         'size': 0,
         'pieces': []
     }
-    with open(file_name, 'rb') as f:
+    with open(f_path, 'rb') as f:
         for chunk in read_chunks(f):
             checksum = hashlib.md5(chunk).hexdigest()
             file_info['pieces'].append(checksum)
@@ -85,7 +85,7 @@ def get_files_info(files):
     info = []
     for f in files:
         f_path = os.path.join(STORAGE_DIR, f)
-        f_info = get_file_info(f_path)
+        f_info = get_file_info(f_path, f)
         info.append(f_info)
     return info
 

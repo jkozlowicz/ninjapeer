@@ -2,6 +2,8 @@ __author__ = 'jkozlowicz'
 
 from django.conf import settings
 
+from file_sharing import convert_bytes
+
 from util import TEMPLATE_DIRS, STATIC_PATH
 
 from twisted.web.resource import Resource
@@ -99,7 +101,7 @@ class WebInterfaceFactory(protocol.Factory):
     def __init__(self, node):
         self.client = None
         self.node = node
-        self.node.web_service = self
+        self.node.interface = self
 
     def buildProtocol(self, addr):
         return WebInterfaceProtocol(self)
@@ -107,9 +109,14 @@ class WebInterfaceFactory(protocol.Factory):
     def display_match(self, datagram):
         files_info = datagram['INFO']
         owner = datagram['NODE_ID']
-        msg = json.dumps({
-            'FILENAME': files_info['name'],
-            'SIZE': files_info['name'],
-            'SUBMISSION_DATE': '30.09.2014',
-        })
+        msg = json.dumps(
+            [
+                {
+                    'name': f['name'],
+                    'size': convert_bytes(f['size']),
+                    'hash': f['hash'],
+                    'owner': owner
+                } for f in files_info
+            ]
+        )
         self.client.transport.write(msg)
