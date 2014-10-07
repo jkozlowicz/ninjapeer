@@ -75,7 +75,7 @@ class Homepage(Resource):
 class WebInterfaceProtocol(protocol.Protocol):
     def __init__(self, factory):
         self.factory = factory
-        self.factory.web_sock = self
+        self.factory.client = self
 
     def connectionMade(self):
         pass
@@ -87,11 +87,24 @@ class WebInterfaceProtocol(protocol.Protocol):
         if action == 'QUERY':
             self.factory.node.msg_service.send_query(val)
         elif action == 'DOWNLOAD':
-            self.factory.node.msg_service.send_download_request(val)
+            pass
+            # self.factory.node.msg_service.send_download_request(val)
         else:
             pass
 
-    def display_query_match(self, datagram):
+
+class WebInterfaceFactory(protocol.Factory):
+    protocol = WebInterfaceProtocol
+
+    def __init__(self, node):
+        self.client = None
+        self.node = node
+        self.node.web_service = self
+
+    def buildProtocol(self, addr):
+        return WebInterfaceProtocol(self)
+
+    def display_match(self, datagram):
         files_info = datagram['INFO']
         owner = datagram['NODE_ID']
         msg = json.dumps({
@@ -99,16 +112,4 @@ class WebInterfaceProtocol(protocol.Protocol):
             'SIZE': files_info['name'],
             'SUBMISSION_DATE': '30.09.2014',
         })
-        self.transport.write(msg)
-
-
-class WebInterfaceFactory(protocol.Factory):
-    protocol = WebInterfaceProtocol
-
-    def __init__(self, node):
-        self.web_sock = None
-        self.node = node
-        self.node.web_service = self
-
-    def buildProtocol(self, addr):
-        return WebInterfaceProtocol(self)
+        self.client.transport.write(msg)

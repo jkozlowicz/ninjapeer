@@ -1,4 +1,6 @@
 .idea*
 static/css/.sass-cache
 *.pyc
-storage
+appData
+sample_file.mkv
+sample2.mp3

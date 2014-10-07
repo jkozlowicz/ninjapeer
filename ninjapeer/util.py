@@ -6,7 +6,8 @@ import os
 PROJECT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 STATIC_PATH = PROJECT_PATH + '/static/'
 TEMPLATE_DIRS = (PROJECT_PATH + '/templates/', )
-STORAGE_DIR = PROJECT_PATH + '/storage/'
+APP_DATA_DIR = PROJECT_PATH + '/appData/'
+STORAGE_DIR = APP_DATA_DIR + '/storage/'
 
 
 def get_machine_ip():

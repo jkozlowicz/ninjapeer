@@ -74,17 +74,10 @@ class MessagingProtocol(protocol.DatagramProtocol):
         elif len(self.node.peers) < MIN_PEER_NUM and not self.ping_loop.running:
             self.ping_loop.start(PING_INTERVAL)
 
-    def download_request_received(self, request):
-        pass
-
-    def send_download_request(self, request):
-        pass
-
     def datagramReceived(self, datagram, addr):
         host, port = addr
         datagram = json.loads(datagram)
-        if host == self.node.host or self.if_msg_duplicated(datagram):
-            self.discard_msg()
+        if self.self_generated(host, datagram) or self.already_received(datagram):
             return
         else:
             self.message_bag[datagram['MSG_ID']] = 1
@@ -96,8 +89,12 @@ class MessagingProtocol(protocol.DatagramProtocol):
             self.ping_received(addr)
         elif datagram['MSG'] == 'PONG':
             self.pong_received(addr)
-        elif datagram['MSG'] == 'QUERY':
-            self.query_received(addr, datagram)
+        else:
+            self.node.add_route(datagram['NODE_ID', host])
+            if datagram['MSG'] == 'QUERY':
+                self.query_received(addr, datagram)
+            elif datagram['MSG'] == 'MATCH':
+                self.match_received(addr, datagram)
 
     def start_pinging(self):
         print 'Starting PING service'
@@ -115,7 +112,7 @@ class MessagingProtocol(protocol.DatagramProtocol):
             self.transport.write(msg, (addr, MSG_PORT))
 
     def query_received(self, addr, datagram):
-        print 'Messaging protocol received query'
+        print 'Received QUERY'
         host, port = addr
         matching_files = file_sharing.handle_query(datagram['QUERY'])
         if matching_files:
@@ -124,7 +121,7 @@ class MessagingProtocol(protocol.DatagramProtocol):
             msg = json.dumps({
                 'MSG': 'MATCH',
                 'INFO': files_info,
-                'TARGET': datagram['NODE_ID'],
+                'RECIPIENT': datagram['NODE_ID'],
                 'NODE_ID': self.node.id,
                 'MSG_ID': uuid.uuid4().get_hex()
             })
@@ -133,14 +130,14 @@ class MessagingProtocol(protocol.DatagramProtocol):
         for peer in self.node.peers:
             self.transport.write(datagram, (peer, MSG_PORT))
 
-    def query_match_received(self, addr, datagram):
-        print 'Messaging protocol received query'
+    def match_received(self, addr, datagram):
+        print 'Received MATCH'
         host, port = addr
         _datagram = json.loads(datagram)
-        target = _datagram['TARGET']
-        if target == self.node.id:
+        recipient = _datagram['RECIPIENT']
+        if recipient == self.node.id:
             print 'Delivering query match'
-            self.node.web_service.web_sock.display_query_match(_datagram)
+            self.node.interface.display_match(_datagram)
         else:
             print 'Passing match further'
             self.transport.write(datagram, (host, MSG_PORT))
@@ -156,14 +153,12 @@ class MessagingProtocol(protocol.DatagramProtocol):
         for peer in self.node.peers:
             self.transport.write(msg, (peer, MSG_PORT))
 
-    def discard_msg(self):
-        pass
+    def already_received(self, datagram):
+        return datagram['MSG_ID'] in self.message_bag
 
-    def if_msg_duplicated(self, datagram):
-        try:
-            duplicated = datagram['MSG_ID'] in self.message_bag
-            return duplicated
-        except KeyError:
-            print '=========='
-            print datagram
-            print '=========='
+    def self_generated(self, host, datagram):
+        if host == self.node.host:
+            return True
+        if datagram.get('NODE_ID', -1) == self.node.id:
+            return True
+        return False
