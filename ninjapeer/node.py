@@ -4,9 +4,10 @@ import file_sharing
 
 import uuid
 
-from util import get_machine_ip
+from util import get_machine_ip, LimitedDict
 
 MAX_GATEWAYS = 10
+MSG_LIMIT = 1000
 
 
 class NinjaNode(object):
@@ -18,7 +19,9 @@ class NinjaNode(object):
         self.msg_service = None
         self.interface = None
         self.file_sharing_service = None
-        self.last_query_result = None
+        self.last_query_id = None
+        self.last_query_result = {}
+        self.message_bag = None
         self.pending_transfers = []
 
         self.startup()
@@ -26,6 +29,7 @@ class NinjaNode(object):
     def startup(self):
         self.id = uuid.uuid4().hex
         self.host = get_machine_ip()
+        self.message_bag = LimitedDict(limit=MSG_LIMIT)
         file_sharing.create_dir_structure()
 
     def add_route(self, dest_id, gateway_ip):

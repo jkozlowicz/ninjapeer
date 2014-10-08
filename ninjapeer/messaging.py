@@ -1,11 +1,12 @@
 __author__ = 'jkozlowicz'
-from collections import OrderedDict
 
 from twisted.internet import protocol, task
 
 from util import AddressService
 
 import file_sharing
+
+import random
 
 import json
 
@@ -14,23 +15,6 @@ import uuid
 MSG_PORT = 8890
 PING_INTERVAL = 0.1
 MIN_PEER_NUM = 3
-MSG_LIMIT = 1000
-
-
-class LimitedDict(OrderedDict):
-    def __init__(self, *args, **kwds):
-        self.limit = kwds.pop("limit", None)
-        OrderedDict.__init__(self, *args, **kwds)
-        self._check_size_limit()
-
-    def __setitem__(self, key, value):
-        OrderedDict.__setitem__(self, key, value)
-        self._check_size_limit()
-
-    def _check_size_limit(self):
-        if self.limit is not None:
-            while len(self) > self.limit:
-                self.popitem(last=False)
 
 
 class MessagingProtocol(protocol.DatagramProtocol):
@@ -38,7 +22,6 @@ class MessagingProtocol(protocol.DatagramProtocol):
         self.node = node
         self.node.msg_service = self
         self.address_service = AddressService()
-        self.message_bag = LimitedDict(limit=MSG_LIMIT)
         self.ping_loop = None
 
     def startProtocol(self):
@@ -78,13 +61,10 @@ class MessagingProtocol(protocol.DatagramProtocol):
     def datagramReceived(self, datagram, addr):
         host, port = addr
         datagram = json.loads(datagram)
-        from pprint import pprint
-        pprint(datagram)
         if self.self_generated(host, datagram) or self.already_received(datagram):
             return
         else:
-            self.message_bag[datagram['MSG_ID']] = 1
-        host, port = addr
+            self.node.message_bag[datagram['MSG_ID']] = 1
         print 'Received msg:{0} from:{1} on port:{2}'.format(
             datagram, host, port
         )
@@ -127,7 +107,8 @@ class MessagingProtocol(protocol.DatagramProtocol):
                 'INFO': files_info,
                 'RECIPIENT': datagram['NODE_ID'],
                 'NODE_ID': self.node.id,
-                'MSG_ID': uuid.uuid4().get_hex()
+                'MSG_ID': uuid.uuid4().get_hex(),
+                'QUERY_ID': datagram['MSG_ID']
             })
             self.transport.write(msg, (host, MSG_PORT))
         datagram = json.dumps(datagram)
@@ -140,26 +121,49 @@ class MessagingProtocol(protocol.DatagramProtocol):
         recipient = datagram['RECIPIENT']
         if recipient == self.node.id:
             print 'Delivering query match'
-            self.node.last_query_result = datagram
-            self.node.interface.display_match(datagram)
+            #TODO: Think about case when multiple matches arrive
+            query_id = datagram['QUERY_ID']
+            if not query_id == self.node.last_query_id:
+                #Match for old query
+                pass
+            else:
+                if query_id in self.node.last_query_result.keys():
+                    self.node.last_query_result[query_id].append(datagram)
+                else:
+                    self.node.last_query_result = {
+                        query_id: [datagram]
+                    }
+                self.node.interface.display_match(datagram)
         else:
             print 'Passing match further'
-            self.transport.write(json.dumps(datagram), (host, MSG_PORT))
+            intermediaries = self.node.routing_table.get(recipient, None)
+            serialized_datagram = json.dumps(datagram)
+            if intermediaries is None:
+                for peer in set(self.node.peers) - set([host]):
+                    self.transport.write(serialized_datagram, (peer, MSG_PORT))
+            else:
+                intermediary = random.choice(intermediaries)
+                self.transport.write(
+                    serialized_datagram,
+                    (intermediary, MSG_PORT)
+                )
 
     def send_query(self, query):
         print 'Sending query'
-        self.node.last_query_result = None
+        self.node.last_query_result = {}
+        msg_id = uuid.uuid4().get_hex()
+        self.node.last_query_id = msg_id
         msg = json.dumps({
             'MSG': 'QUERY',
             'QUERY': query,
             'NODE_ID': self.node.id,
-            'MSG_ID': uuid.uuid4().get_hex()
+            'MSG_ID': msg_id
         })
         for peer in self.node.peers:
             self.transport.write(msg, (peer, MSG_PORT))
 
     def already_received(self, datagram):
-        return datagram['MSG_ID'] in self.message_bag
+        return datagram['MSG_ID'] in self.node.message_bag
 
     def self_generated(self, host, datagram):
         if host == self.node.host:

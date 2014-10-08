@@ -3,11 +3,29 @@ import random
 
 import os
 
+from collections import OrderedDict
+
 PROJECT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 STATIC_PATH = PROJECT_PATH + '/static/'
 TEMPLATE_DIRS = (PROJECT_PATH + '/templates/', )
 APP_DATA_DIR = PROJECT_PATH + '/appData/'
 STORAGE_DIR = APP_DATA_DIR + '/storage/'
+
+
+class LimitedDict(OrderedDict):
+    def __init__(self, *args, **kwds):
+        self.limit = kwds.pop("limit", None)
+        OrderedDict.__init__(self, *args, **kwds)
+        self._check_size_limit()
+
+    def __setitem__(self, key, value):
+        OrderedDict.__setitem__(self, key, value)
+        self._check_size_limit()
+
+    def _check_size_limit(self):
+        if self.limit is not None:
+            while len(self) > self.limit:
+                self.popitem(last=False)
 
 
 def get_machine_ip():
