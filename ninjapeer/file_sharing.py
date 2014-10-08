@@ -105,9 +105,9 @@ class FileSharingService(xmlrpc.XMLRPC):
             else:
                 raise xmlrpc.Fault(100, "File does not exist.")
         else:
-            gateway = self.node.routing_table.get(owner_id, None)
-            if gateway:
-                s = xmlrpclib.Server(':'.join([gateway, RPC_PORT]))
+            gateway_ip = self.node.routing_table.get(owner_id, None)
+            if gateway_ip:
+                s = xmlrpclib.Server(':'.join([gateway_ip, RPC_PORT]))
                 return s.get_file_chunk(owner_id, file_name, chunk_num)
             else:
                 pass

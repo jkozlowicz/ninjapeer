@@ -13,8 +13,19 @@ function onError(evt){
 }
 
 function onOpen(e) {
+    if(window.location.pathname === '/search'){
+        requestLastQueryResult();
+    }else if(window.location.pathname === '/home'){
+        console.log('home');
+    }
 }
 
 function onMessage(e) {
     console.log(e.data);
+    var msg = $.parseJSON(e.data);
+    if(msg.event == 'MATCH'){
+
+        renderMatchResult(msg.content);
+
+    }
 }

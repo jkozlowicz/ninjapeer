@@ -18,7 +18,8 @@ class NinjaNode(object):
         self.msg_service = None
         self.interface = None
         self.file_sharing_service = None
-        self.last_query = None
+        self.last_query_result = None
+        self.pending_transfers = []
 
         self.startup()
 

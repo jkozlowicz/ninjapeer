@@ -50,6 +50,7 @@ class MessagingProtocol(protocol.DatagramProtocol):
 
     def display_connections(self):
         print self.node.peers
+        print self.node.routing_table
 
     def ping_received(self, addr):
         host, port = addr
@@ -77,6 +78,8 @@ class MessagingProtocol(protocol.DatagramProtocol):
     def datagramReceived(self, datagram, addr):
         host, port = addr
         datagram = json.loads(datagram)
+        from pprint import pprint
+        pprint(datagram)
         if self.self_generated(host, datagram) or self.already_received(datagram):
             return
         else:
@@ -137,6 +140,7 @@ class MessagingProtocol(protocol.DatagramProtocol):
         recipient = datagram['RECIPIENT']
         if recipient == self.node.id:
             print 'Delivering query match'
+            self.node.last_query_result = datagram
             self.node.interface.display_match(datagram)
         else:
             print 'Passing match further'
@@ -144,6 +148,7 @@ class MessagingProtocol(protocol.DatagramProtocol):
 
     def send_query(self, query):
         print 'Sending query'
+        self.node.last_query_result = None
         msg = json.dumps({
             'MSG': 'QUERY',
             'QUERY': query,

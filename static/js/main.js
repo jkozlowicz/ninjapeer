@@ -1,44 +1,45 @@
 $(document).ready(function(){
     init();
 
-    $("#query-form").submit(function( event ) {
-        var query = $( "#inputQuery" ).val();
-        if ((query !== "" &&  query !== undefined)) {
-            var data = {
-                "action": "QUERY",
-                "value": query
-            };
-            var json_str = JSON.stringify(data);
-            websocket.send(json_str);
-            showLoadingAnimation();
-        }else{
-            //TODO: Display error
-        }
-        event.preventDefault();
-    });
-
-    $(".download-file").click(onClickDownloadFile);
+    $("#query-form").submit(onClickSearch);
+    $('body').on("click", "table tbody tr td a", onClickDownloadFile);
     $(".stop-download-file").click(onClickStopDownloadFile);
     $(".delete-file").click(onClickDeleteFile);
 
 });
 
-var getFileName = function(elem){
+var getFileDetails = function(elem){
     /** currRow stores reference to parent <tr> element*/
     var currRow = $(elem).parent().parent();
-    return currRow.find('.result-name')[0].textContent;
+    return {
+        "fileName": currRow.find('.result-name')[0].textContent,
+        "hash": currRow.find('.result-hash')[0].textContent
+    };
+};
+
+var onClickSearch = function(event){
+    hideResultTable();
+    var query = $( "#inputQuery" ).val();
+    if ((query !== "" &&  query !== undefined)) {
+        sendAction("QUERY", query);
+        clearMatchResult();
+        showLoadingAnimation();
+    }else{
+        //TODO: Display error
+    }
+    event.preventDefault();
 };
 
 var onClickStopDownloadFile = function(){
-    sendAction("STOP_DOWNLOAD", getFileName(this));
+    sendAction("STOP_DOWNLOAD", getFileDetails(this));
 };
 
 var onClickDeleteFile = function(){
-    sendAction("DELETE_FILE", getFileName(this));
+    sendAction("DELETE_FILE", getFileDetails(this));
 };
 
 var onClickDownloadFile = function(){
-    sendAction("DOWNLOAD", getFileName(this));
+    sendAction("DOWNLOAD", getFileDetails(this));
 };
 
 var sendAction = function(action, value){
@@ -50,6 +51,26 @@ var sendAction = function(action, value){
     websocket.send(json_str);
 };
 
+var renderMatchResult = function(lastMatchResult){
+    showResultTable();
+    var matchResultTableBody = $('#query-result-table tbody');
+    for(var i=0; i<lastMatchResult.length ; i++){
+        var result = lastMatchResult[i];
+        var row = '<tr class="result-item">' +
+        '<td class="vert-align result-name">' + result.name + '</td>' +
+        '<td class="vert-align result-hash">' + result.hash + '</td>' +
+        '<td class="vert-align result-date">' + result.date + '</td>' +
+        '<td class="vert-align result-size">' + result.size[0] + ' ' + result.size[1] + '</td>' +
+        '<td class="vert-align"><a href="#"><span class="glyphicon glyphicon-download glyphicon-big"></span></a></td>' +
+        '</tr>';
+        matchResultTableBody.append(row);
+    }
+};
+//var bar = $('div .progress-bar-striped')[0];
+//
+//$(bar).removeClass('active');
+//$(bar).removeClass('progress-bar-striped');
+
 var hideLoadingAnimation = function(){
     $('#loading-img-container').addClass("hidden");
 };
@@ -58,16 +79,18 @@ var showLoadingAnimation = function(){
     $('#loading-img-container').removeClass("hidden");
 };
 
-var addResult = function(name, date, size){
-    var row = '<tr class="result-item">' +
-	'<td class="vert-align result-name">' + name + '</td>' +
-	'<td class="vert-align result-date">' + date + '</td>' +
-	'<td class="vert-align result-size">' + size + '</td>' +
-    '<td class="vert-align"><a href="#"><span class="glyphicon glyphicon-download glyphicon-big"></span></a></td>' +
-	'</tr>';
+var hideResultTable = function(){
+    $('#query-result-table-container').addClass("hidden");
 };
 
-//var bar = $('div .progress-bar-striped')[0];
-//
-//$(bar).removeClass('active');
-//$(bar).removeClass('progress-bar-striped');
+var showResultTable = function(){
+    $('#query-result-table-container').removeClass("hidden");
+};
+
+var clearMatchResult = function(){
+    $('#query-result-table tbody').empty();
+};
+
+var requestLastQueryResult = function(){
+    sendAction("LAST_QUERY_RESULT", null);
+};
