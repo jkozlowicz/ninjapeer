@@ -7,6 +7,8 @@ import xmlrpclib
 
 import os
 
+import random
+
 import hashlib
 
 RPC_PORT = 7090
@@ -69,7 +71,7 @@ def create_dir_structure():
         os.makedirs(STORAGE_DIR)
 
 
-def handle_query(query):
+def get_matching_files(query):
     files = os.listdir(STORAGE_DIR)
     terms = query.split()
     results = []
@@ -105,9 +107,22 @@ class FileSharingService(xmlrpc.XMLRPC):
             else:
                 raise xmlrpc.Fault(100, "File does not exist.")
         else:
-            gateway_ip = self.node.routing_table.get(owner_id, None)
-            if gateway_ip:
-                s = xmlrpclib.Server(':'.join([gateway_ip, RPC_PORT]))
-                return s.get_file_chunk(owner_id, file_name, chunk_num)
-            else:
-                pass
+            intermediaries = self.node.routing_table.get(owner_id, None)
+            if intermediaries:
+                for host in intermediaries:
+                    try:
+                        s = xmlrpclib.Server(
+                            'http://' + ':'.join([host, RPC_PORT])
+                        )
+                        return s.get_file_chunk(
+                            owner_id, file_name, chunk_num
+                        )
+                    except xmlrpclib.Fault as fault:
+                        if fault.faultCode == 100:
+                            raise
+                        elif fault.faultCode == 101:
+                            self.node.routing_table[owner_id].remove(host)
+                    except xmlrpclib.ProtocolError as err:
+                        self.node.routing_table[owner_id].remove(host)
+                        del self.node.peers[host]
+            raise xmlrpc.Fault(101, "No route found for %s." % owner_id)

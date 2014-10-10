@@ -6,7 +6,7 @@ import uuid
 
 from util import get_machine_ip, LimitedDict
 
-MAX_GATEWAYS = 10
+MAX_INTERMEDIARIES = 10
 MSG_LIMIT = 1000
 
 
@@ -32,13 +32,13 @@ class NinjaNode(object):
         self.message_bag = LimitedDict(limit=MSG_LIMIT)
         file_sharing.create_dir_structure()
 
-    def add_route(self, dest_id, gateway_ip):
-        curr_gateways = self.routing_table.get(dest_id, None)
-        if curr_gateways is None:
-            self.routing_table[dest_id] = [gateway_ip]
+    def add_route(self, addressee, host):
+        intermediaries = self.routing_table.get(addressee, None)
+        if intermediaries is None:
+            self.routing_table[addressee] = [host]
         else:
-            if gateway_ip not in curr_gateways:
-                curr_gateways.append(gateway_ip)
-                if len(curr_gateways) > MAX_GATEWAYS:
-                    curr_gateways = curr_gateways[1:]
-                self.routing_table[dest_id] = curr_gateways
+            if host not in intermediaries:
+                intermediaries.append(host)
+                if len(intermediaries) > MAX_INTERMEDIARIES:
+                    intermediaries = intermediaries[1:]
+                self.routing_table[addressee] = intermediaries
