@@ -8,6 +8,7 @@ from util import get_machine_ip, LimitedDict
 
 MAX_INTERMEDIARIES = 10
 MSG_LIMIT = 1000
+QUERY_LIMIT = 200
 
 
 class NinjaNode(object):
@@ -23,6 +24,7 @@ class NinjaNode(object):
         self.last_query_result = {}
         self.message_bag = None
         self.pending_transfers = []
+        self.queries = None
 
         self.startup()
 
@@ -30,6 +32,7 @@ class NinjaNode(object):
         self.id = uuid.uuid4().hex
         self.host = get_machine_ip()
         self.message_bag = LimitedDict(limit=MSG_LIMIT)
+        self.queries = LimitedDict(limit=QUERY_LIMIT)
         file_sharing.create_dir_structure()
 
     def add_route(self, addressee, host):

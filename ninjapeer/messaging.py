@@ -63,7 +63,7 @@ class MessagingProtocol(protocol.DatagramProtocol):
         datagram = json.loads(datagram)
         if not (self.self_generated(host, datagram) or
                 self.already_received(datagram)):
-            self.node.message_bag[datagram['MSG_ID']] = host
+            self.node.message_bag[datagram['MSG_ID']] = 1
             print 'Received msg:{0} from:{1} on port:{2}'.format(
                 datagram, host, port
             )
@@ -96,6 +96,7 @@ class MessagingProtocol(protocol.DatagramProtocol):
     def query_received(self, addr, datagram):
         print 'Received QUERY'
         host, port = addr
+        self.node.queries[datagram['MSG_ID']] = host
         matching_files = file_sharing.get_matching_files(datagram['QUERY'])
         if matching_files:
             print 'Sending MATCH'
@@ -133,17 +134,13 @@ class MessagingProtocol(protocol.DatagramProtocol):
                     }
                 self.node.interface.display_match(datagram)
         else:
-            print 'Passing match further'
-            intermediaries = self.node.routing_table.get(addressee, None)
-            serialized_datagram = json.dumps(datagram)
-            if intermediaries is None:
-                for peer in set(self.node.peers) - set([host]):
-                    self.transport.write(serialized_datagram, (peer, MSG_PORT))
-            else:
-                intermediary = random.choice(intermediaries)
+            print 'Passing match back'
+            if datagram['QUERY_ID'] in self.node.queries:
+                next_hop = self.node.queries['QUERY_ID']
+                serialized_datagram = json.dumps(datagram)
                 self.transport.write(
                     serialized_datagram,
-                    (intermediary, MSG_PORT)
+                    (next_hop, MSG_PORT)
                 )
 
     def send_query(self, query):

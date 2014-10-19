@@ -7,8 +7,6 @@ import xmlrpclib
 
 import os
 
-import random
-
 import hashlib
 
 RPC_PORT = 7090
@@ -111,10 +109,10 @@ class FileSharingService(xmlrpc.XMLRPC):
             if intermediaries:
                 for host in intermediaries:
                     try:
-                        s = xmlrpclib.Server(
+                        stub = xmlrpclib.Server(
                             'http://' + ':'.join([host, RPC_PORT])
                         )
-                        return s.get_file_chunk(
+                        return stub.get_file_chunk(
                             owner_id, file_name, chunk_num
                         )
                     except xmlrpclib.Fault as fault:
