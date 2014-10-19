@@ -32,8 +32,9 @@ class MessagingProtocol(protocol.DatagramProtocol):
         task2.start(7, now=False)
 
     def display_connections(self):
-        print self.node.peers
-        print self.node.routing_table
+        print 'peers: \n%s' % self.node.peers
+        print 'routing table: \n%s' % self.node.routing_table
+        print 'queries: \n%s' % self.node.queries
 
     def ping_received(self, addr):
         host, port = addr
@@ -95,7 +96,6 @@ class MessagingProtocol(protocol.DatagramProtocol):
 
     def query_received(self, addr, datagram):
         print 'Received QUERY'
-        import pdb;pdb.set_trace()
         host, port = addr
         self.node.queries[datagram['MSG_ID']] = host
         matching_files = file_sharing.get_matching_files(datagram['QUERY'])
