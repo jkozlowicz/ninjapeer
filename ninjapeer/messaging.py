@@ -128,7 +128,7 @@ class MessagingProtocol(protocol.DatagramProtocol):
             if not query_id == self.node.last_query_id:
                 return
             else:
-                if query_id in self.node.last_query_result:
+                if self.node.last_query_result:
                     self.node.last_query_result.append(datagram)
                 else:
                     self.node.last_query_result = [datagram]

@@ -46,7 +46,7 @@ def get_chunk(file_name, chunk_num):
         f.close()
         return chunk
     except IOError:
-        print 'Error occurred while reading file %s' % file_name
+        print 'Cannot read chunk %s from file %s' % (chunk_num, file_name)
         raise
 
 
@@ -102,12 +102,13 @@ class Downloader(object):
         self.node.downloader = self
 
     def download(self, file_hash):
-        #{u'hash': u'2d48eff79914dd402caf7cd72c92b5e3',
-        # u'fileName': u'sample.txt'}
         file_info = None
-        # for
-
-        print file_hash
+        for result in self.node.last_query_result:
+            if result['INFO']['hash'] == file_hash:
+                file_info = result
+                break
+        # import ipdb;ipdb.set_trace()
+        print file_info
         pass
 
 

@@ -92,8 +92,7 @@ class WebInterfaceProtocol(protocol.Protocol):
             self.factory.node.msg_service.download_requested(val)
         elif action == 'LAST_QUERY_RESULT':
             if self.factory.node.last_query_result:
-                query_id = self.factory.node.last_query_id
-                for result in self.factory.node.last_query_result[query_id]:
+                for result in self.factory.node.last_query_result:
                     self.factory.display_match(result)
         else:
             pass
@@ -112,7 +111,6 @@ class WebInterfaceFactory(protocol.Factory):
 
     def display_match(self, datagram):
         files_info = datagram['INFO']
-        owner = datagram['NODE_ID']
         msg = json.dumps(
             {
                 'event': 'MATCH',
@@ -120,7 +118,6 @@ class WebInterfaceFactory(protocol.Factory):
                     'name': f['name'],
                     'size': convert_bytes(f['size']),
                     'hash': f['hash'],
-                    'owner': owner
                 } for f in files_info]
             }
         )
