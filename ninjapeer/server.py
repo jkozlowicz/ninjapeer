@@ -1,5 +1,5 @@
 __author__ = 'jkozlowicz'
-from file_sharing import FileSharingService, RPC_PORT
+from file_sharing import FileSharingService, RPC_PORT, Downloader
 
 from twisted.internet import reactor, protocol
 from twisted.web.server import Site, Session
@@ -26,6 +26,7 @@ if __name__ == "__main__":
     ninjanode = NinjaNode()
     file_sharing_service = FileSharingService(node=ninjanode)
     web_interface = WebSocketFactory(WebInterfaceFactory(ninjanode))
+    downloader = Downloader(ninjanode)
     reactor.listenTCP(WEBSOCK_PORT, web_interface)
     reactor.listenTCP(8000, website)
     reactor.listenUDP(MSG_PORT, MessagingProtocol(ninjanode))

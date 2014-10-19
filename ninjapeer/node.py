@@ -20,8 +20,9 @@ class NinjaNode(object):
         self.msg_service = None
         self.interface = None
         self.file_sharing_service = None
+        self.downloader = None
         self.last_query_id = None
-        self.last_query_result = {}
+        self.last_query_result = []
         self.message_bag = None
         self.pending_transfers = []
         self.queries = None

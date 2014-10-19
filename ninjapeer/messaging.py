@@ -35,6 +35,7 @@ class MessagingProtocol(protocol.DatagramProtocol):
         print 'peers: \n%s' % self.node.peers
         print 'routing table: \n%s' % self.node.routing_table
         print 'queries: \n%s' % self.node.queries
+        print 'last query result: \n%s' % self.node.last_query_result
 
     def ping_received(self, addr):
         host, port = addr
@@ -128,11 +129,9 @@ class MessagingProtocol(protocol.DatagramProtocol):
                 return
             else:
                 if query_id in self.node.last_query_result:
-                    self.node.last_query_result[query_id].append(datagram)
+                    self.node.last_query_result.append(datagram)
                 else:
-                    self.node.last_query_result = {
-                        query_id: [datagram]
-                    }
+                    self.node.last_query_result = [datagram]
                 self.node.interface.display_match(datagram)
         else:
             print 'Passing match back'
@@ -146,7 +145,7 @@ class MessagingProtocol(protocol.DatagramProtocol):
 
     def send_query(self, query):
         print 'Sending query'
-        self.node.last_query_result = {}
+        self.node.last_query_result = []
         msg_id = uuid.uuid4().get_hex()
         self.node.last_query_id = msg_id
         msg = json.dumps({
@@ -170,6 +169,4 @@ class MessagingProtocol(protocol.DatagramProtocol):
 
     def download_requested(self, file_info):
         print 'Download requested'
-        print file_info
-        print self.node.last_query_result
-        pass
+        self.node.downloader.download(file_info['hash'])

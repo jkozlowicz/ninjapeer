@@ -90,6 +90,27 @@ def get_files_info(files):
     return info
 
 
+def get_file_chunk(owner_id, file_name, chunk_num):
+    from twisted.web.xmlrpc import Proxy
+    proxy = Proxy('http://advogato.org/XMLRPC')
+    pass
+
+
+class Downloader(object):
+    def __init__(self, node):
+        self.node = node
+        self.node.downloader = self
+
+    def download(self, file_hash):
+        #{u'hash': u'2d48eff79914dd402caf7cd72c92b5e3',
+        # u'fileName': u'sample.txt'}
+        file_info = None
+        # for
+
+        print file_hash
+        pass
+
+
 class FileSharingService(xmlrpc.XMLRPC):
     def __init__(self, *args, **kwargs):
         self.node = kwargs.pop('node')
