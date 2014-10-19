@@ -1,11 +1,16 @@
-var websockAddr = "ws://0.0.0.0:8888";
 var websocket = null;
 
 function init() {
-    websocket = new WebSocket(websockAddr);
-    websocket.onopen = function(e) { onOpen(e) };
-    websocket.onmessage = function(e) { onMessage(e) };
-    websocket.onerror = function(evt) { onError(evt) };
+
+    $.get("http://localhost:8000/gethost", function(data){
+        var host = $.parseJSON(data).host;
+        var websockAddr = "ws://" + host + ":8888";
+        console.log(websockAddr);
+        websocket = new WebSocket(websockAddr);
+        websocket.onopen = function(e) { onOpen(e) };
+        websocket.onmessage = function(e) { onMessage(e) };
+        websocket.onerror = function(evt) { onError(evt) };
+    });
 }
 
 function onError(evt){
