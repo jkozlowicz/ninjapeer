@@ -8,7 +8,7 @@ from twisted.web.static import File
 
 from txws import WebSocketFactory
 
-from web_interface import Homepage, Search, HostManager, WebInterfaceFactory
+from web_interface import Homepage, Search, WebInterfaceFactory
 from web_interface import STATIC_PATH, WEBSOCK_PORT
 
 from node import NinjaNode
@@ -24,8 +24,6 @@ if __name__ == "__main__":
     root.putChild("search", search_page)
     website = Site(root)
     ninjanode = NinjaNode()
-    port_manager = HostManager(ninjanode.host)
-    root.putChild("gethost", port_manager)
     file_sharing_service = FileSharingService(node=ninjanode)
     web_interface = WebSocketFactory(WebInterfaceFactory(ninjanode))
     reactor.listenTCP(WEBSOCK_PORT, web_interface)

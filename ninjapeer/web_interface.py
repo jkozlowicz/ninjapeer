@@ -74,17 +74,6 @@ class Homepage(Resource):
         return str(content)
 
 
-class HostManager(Resource):
-    isLeaf = True
-
-    def __init__(self, host):
-        Resource.__init__(self)
-        self.host = host
-
-    def render_GET(self, request):
-        return json.dumps({'host': self.host})
-
-
 class WebInterfaceProtocol(protocol.Protocol):
     def __init__(self, factory):
         self.factory = factory
