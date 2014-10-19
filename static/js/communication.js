@@ -1,4 +1,4 @@
-var websockAddr = "ws://127.0.0.1:8888";
+var websockAddr = "ws://0.0.0.0:8888";
 var websocket = null;
 
 function init() {

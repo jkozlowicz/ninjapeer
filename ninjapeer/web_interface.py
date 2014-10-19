@@ -89,11 +89,11 @@ class WebInterfaceProtocol(protocol.Protocol):
         if action == 'QUERY':
             self.factory.node.msg_service.send_query(val)
         elif action == 'DOWNLOAD':
-            self.start_download(val)
+            self.factory.node.msg_service.download_requested(val)
         elif action == 'LAST_QUERY_RESULT':
             if self.factory.node.last_query_result:
                 query_id = self.factory.node.last_query_id
-                for result in self.factory.node.last_query_result[query_id].values():
+                for result in self.factory.node.last_query_result[query_id]:
                     self.factory.display_match(result)
         else:
             pass

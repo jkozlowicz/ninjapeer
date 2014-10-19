@@ -95,6 +95,7 @@ class MessagingProtocol(protocol.DatagramProtocol):
 
     def query_received(self, addr, datagram):
         print 'Received QUERY'
+        import pdb;pdb.set_trace()
         host, port = addr
         self.node.queries[datagram['MSG_ID']] = host
         matching_files = file_sharing.get_matching_files(datagram['QUERY'])
@@ -166,3 +167,9 @@ class MessagingProtocol(protocol.DatagramProtocol):
         if datagram.get('NODE_ID', -1) == self.node.id:
             return True
         return False
+
+    def download_requested(self, file_info):
+        print 'Download requested'
+        print file_info
+        print self.node.last_query_result
+        pass
