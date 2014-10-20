@@ -1,7 +1,8 @@
 __author__ = 'jkozlowicz'
-from util import STORAGE_DIR, APP_DATA_DIR
+from util import STORAGE_DIR, APP_DATA_DIR, TEMP_DIR
 
 from twisted.web import xmlrpc
+from twisted.web.xmlrpc import Proxy
 
 import xmlrpclib
 
@@ -68,6 +69,9 @@ def create_dir_structure():
     if not os.path.exists(STORAGE_DIR):
         os.makedirs(STORAGE_DIR)
 
+    if not os.path.exists(TEMP_DIR):
+        os.makedirs(TEMP_DIR)
+
 
 def get_matching_files(query):
     files = os.listdir(STORAGE_DIR)
@@ -90,25 +94,82 @@ def get_files_info(files):
     return info
 
 
-def get_file_chunk(owner_id, file_name, chunk_num):
-    from twisted.web.xmlrpc import Proxy
-    proxy = Proxy('http://advogato.org/XMLRPC')
-    pass
-
-
 class Downloader(object):
     def __init__(self, node):
         self.node = node
         self.node.downloader = self
 
-    def download(self, file_hash):
+    def init_download(self, file_name):
         file_info = None
         for result in self.node.last_query_result:
-            if result['INFO']['hash'] == file_hash:
-                file_info = result
-                break
-        # import ipdb;ipdb.set_trace()
-        print file_info
+            for matched_file in result['INFO']:
+                if matched_file['name'] == file_name:
+                    file_info = result['INFO']
+                    self.download(file_info, result['NODE_ID'])
+                    break
+
+    def download(self, file_info, node_id):
+        f_name = file_info['name']
+        if f_name in self.node.pending_transfers:
+            return
+        pieces = file_info['pieces']
+        intermediaries = self.node.routing_table.get(node_id, None)
+        if intermediaries is None:
+            # notify the user that there is no route to the owner
+            # of the requested file
+            pass
+        else:
+            host = intermediaries[0]
+            proxy = Proxy('http://' + ':'.join([host, RPC_PORT]))
+            self.node.pending_transfers[f_name] = {
+                'pieces': pieces,
+                'hash': file_info['hash'],
+                'OWNER': node_id,
+                'curr_chunk': 0,
+                'proxy': proxy,
+                'deferred': None
+            }
+            self.node.pending_transfer[f_name]['deferred'] = proxy.callRemote(
+                'get_file_chunk', node_id, f_name, 0
+            )
+            d = self.node.pending_transfer[f_name]['deferred']
+            d.addCallbacks(
+                self.chunk_received,
+                self.chunk_failed,
+                callbackKeywords={'f_name': f_name}
+            )
+
+    def chunk_received(self, result, f_name):
+        transfer = self.node.pending_transfers[f_name]
+        curr_chunk = transfer['curr_chunk']
+        print 'chunk received nr %s of file %s' % (curr_chunk, f_name)
+        f_path = os.path.join(TEMP_DIR, f_name)
+        mode = 'w'
+        if curr_chunk > 0:
+            mode = 'a'
+        with open(f_path, mode) as f:
+            f.write(result)
+
+        if not len(transfer['pieces']) == transfer['curr_chunk']:
+            self.node.pending_transfers[f_name]['curr_chunk'] += 1
+            proxy = transfer['proxy']
+            self.node.pending_transfer[f_name]['deferred'] = proxy.callRemote(
+                'get_file_chunk',
+                self.node.pending_transfers[f_name]['OWNER'],
+                f_name,
+                self.node.pending_transfers[f_name]['curr_chunk']
+            )
+            d = self.node.pending_transfer[f_name]['deferred']
+            d.addCallbacks(
+                self.chunk_received,
+                self.chunk_failed,
+                callbackKeywords={'f_name': f_name}
+            )
+        else:
+            print 'File %s assembled successfully' % f_name
+
+    def chunk_failed(self, failure):
+        print 'chunk failed'
         pass
 
 
@@ -131,12 +192,15 @@ class FileSharingService(xmlrpc.XMLRPC):
             if intermediaries:
                 for host in intermediaries:
                     try:
-                        stub = xmlrpclib.Server(
+                        proxy = Proxy(
                             'http://' + ':'.join([host, RPC_PORT])
                         )
-                        return stub.get_file_chunk(
-                            owner_id, file_name, chunk_num
-                        )
+                        return proxy.callRemote(
+                            'get_file_chunk',
+                            owner_id,
+                            file_name,
+                            chunk_num
+                        ).addCallback(lambda res: res)
                     except xmlrpclib.Fault as fault:
                         if fault.faultCode == 100:
                             raise
