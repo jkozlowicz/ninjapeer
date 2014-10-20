@@ -116,7 +116,6 @@ class MessagingProtocol(protocol.DatagramProtocol):
             self.transport.write(datagram, (peer, MSG_PORT))
 
     def match_received(self, addr, datagram):
-        import ipdb;ipdb.set_trace()
         print 'Received MATCH'
         host, port = addr
         addressee = datagram['ADDRESSEE']
