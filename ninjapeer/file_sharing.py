@@ -100,19 +100,17 @@ class Downloader(object):
         self.node.downloader = self
 
     def init_download(self, file_name):
-        file_info = None
         for result in self.node.last_query_result:
             for matched_file in result['INFO']:
                 if matched_file['name'] == file_name:
-                    file_info = result['INFO']
-                    self.download(file_info, result['NODE_ID'])
+                    self.download(matched_file, result['NODE_ID'])
                     break
 
-    def download(self, file_info, node_id):
-        f_name = file_info['name']
+    def download(self, matched_file, node_id):
+        f_name = matched_file['name']
         if f_name in self.node.pending_transfers:
             return
-        pieces = file_info['pieces']
+        pieces = matched_file['pieces']
         intermediaries = self.node.routing_table.get(node_id, None)
         if intermediaries is None:
             # notify the user that there is no route to the owner
@@ -120,19 +118,19 @@ class Downloader(object):
             pass
         else:
             host = intermediaries[0]
-            proxy = Proxy('http://' + ':'.join([host, RPC_PORT]))
+            proxy = Proxy('http://' + ':'.join([host, str(RPC_PORT)]))
             self.node.pending_transfers[f_name] = {
                 'pieces': pieces,
-                'hash': file_info['hash'],
+                'hash': matched_file['hash'],
                 'OWNER': node_id,
                 'curr_chunk': 0,
                 'proxy': proxy,
                 'deferred': None
             }
-            self.node.pending_transfer[f_name]['deferred'] = proxy.callRemote(
+            self.node.pending_transfers[f_name]['deferred'] = proxy.callRemote(
                 'get_file_chunk', node_id, f_name, 0
             )
-            d = self.node.pending_transfer[f_name]['deferred']
+            d = self.node.pending_transfers[f_name]['deferred']
             d.addCallbacks(
                 self.chunk_received,
                 self.chunk_failed,
@@ -153,13 +151,13 @@ class Downloader(object):
         if not len(transfer['pieces']) == transfer['curr_chunk']:
             self.node.pending_transfers[f_name]['curr_chunk'] += 1
             proxy = transfer['proxy']
-            self.node.pending_transfer[f_name]['deferred'] = proxy.callRemote(
+            self.node.pending_transfers[f_name]['deferred'] = proxy.callRemote(
                 'get_file_chunk',
                 self.node.pending_transfers[f_name]['OWNER'],
                 f_name,
                 self.node.pending_transfers[f_name]['curr_chunk']
             )
-            d = self.node.pending_transfer[f_name]['deferred']
+            d = self.node.pending_transfers[f_name]['deferred']
             d.addCallbacks(
                 self.chunk_received,
                 self.chunk_failed,
@@ -193,7 +191,7 @@ class FileSharingService(xmlrpc.XMLRPC):
                 for host in intermediaries:
                     try:
                         proxy = Proxy(
-                            'http://' + ':'.join([host, RPC_PORT])
+                            'http://' + ':'.join([host, str(RPC_PORT)])
                         )
                         return proxy.callRemote(
                             'get_file_chunk',
