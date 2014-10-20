@@ -24,7 +24,7 @@ class NinjaNode(object):
         self.last_query_id = None
         self.last_query_result = []
         self.message_bag = None
-        self.pending_transfers = {}
+        self.transfers = {}
         self.queries = None
 
         self.startup()

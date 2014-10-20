@@ -6,15 +6,13 @@ from util import AddressService
 
 import file_sharing
 
-import random
-
 import json
 
 import uuid
 
 MSG_PORT = 8890
 PING_INTERVAL = 0.1
-MIN_PEER_NUM = 3
+MIN_PEER_NUM = 2
 
 
 class MessagingProtocol(protocol.DatagramProtocol):

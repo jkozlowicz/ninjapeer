@@ -122,3 +122,6 @@ class WebInterfaceFactory(protocol.Factory):
             }
         )
         self.client.transport.write(msg)
+
+    def display_download_progress(self):
+        pass
