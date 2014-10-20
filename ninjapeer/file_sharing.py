@@ -226,6 +226,11 @@ class Downloader(object):
         self.node.transfers[file_name]['aggregated_hash'].update(chunk)
 
 
+def chunk_to_pass_arrived(result):
+    print 'Passing chunk'
+    return result
+
+
 class FileSharingService(xmlrpc.XMLRPC):
     def __init__(self, *args, **kwargs):
         self.node = kwargs.pop('node')
@@ -256,7 +261,7 @@ class FileSharingService(xmlrpc.XMLRPC):
                             file_name,
                             chunk_num
                         )
-                        d.addCallback(lambda res: res)
+                        d.addCallback(chunk_to_pass_arrived)
                         #TODO: add errback
                     except xmlrpclib.Fault as fault:
                         if fault.faultCode == 100:

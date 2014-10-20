@@ -2,3 +2,4 @@
 static/css/.sass-cache
 *.pyc
 appData
+misc
