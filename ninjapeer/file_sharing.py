@@ -125,13 +125,10 @@ class Downloader(object):
                 'OWNER': node_id,
                 'curr_chunk': 0,
                 'proxy': proxy,
-                'deferred': None
             }
-            self.node.pending_transfers[f_name]['deferred'] = proxy.callRemote(
+            proxy.callRemote(
                 'get_file_chunk', node_id, f_name, 0
-            )
-            d = self.node.pending_transfers[f_name]['deferred']
-            d.addCallbacks(
+            ).addCallbacks(
                 self.chunk_received,
                 self.chunk_failed,
                 callbackKeywords={'f_name': f_name}
@@ -146,19 +143,17 @@ class Downloader(object):
         if curr_chunk > 0:
             mode = 'a'
         with open(f_path, mode) as f:
-            f.write(result)
+            f.write(result.data)
 
         if not len(transfer['pieces']) == transfer['curr_chunk']:
             self.node.pending_transfers[f_name]['curr_chunk'] += 1
             proxy = transfer['proxy']
-            self.node.pending_transfers[f_name]['deferred'] = proxy.callRemote(
+            proxy.callRemote(
                 'get_file_chunk',
                 self.node.pending_transfers[f_name]['OWNER'],
                 f_name,
                 self.node.pending_transfers[f_name]['curr_chunk']
-            )
-            d = self.node.pending_transfers[f_name]['deferred']
-            d.addCallbacks(
+            ).addCallbacks(
                 self.chunk_received,
                 self.chunk_failed,
                 callbackKeywords={'f_name': f_name}
@@ -178,10 +173,12 @@ class FileSharingService(xmlrpc.XMLRPC):
         xmlrpc.XMLRPC.__init__(self, *args, **kwargs)
 
     def xmlrpc_get_file_chunk(self, owner_id, file_name, chunk_num):
+        print 'chunk %s of %s requested' % (chunk_num, file_name)
         if owner_id == self.node.id:
             f_path = os.path.join(STORAGE_DIR, file_name)
             if os.path.isfile(f_path):
                 chunk = get_chunk(f_path, chunk_num)
+                print 'serving chunk %s of %s' % (chunk_num, file_name)
                 return xmlrpc.Binary(chunk)
             else:
                 raise xmlrpc.Fault(100, "File does not exist.")
