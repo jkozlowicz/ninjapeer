@@ -30,10 +30,12 @@ class MessagingProtocol(protocol.DatagramProtocol):
         task2.start(7, now=False)
 
     def display_connections(self):
-        print 'peers: \n%s' % self.node.peers
-        print 'routing table: \n%s' % self.node.routing_table
-        print 'queries: \n%s' % self.node.queries
-        print 'last query result: \n%s' % self.node.last_query_result
+        print 'peers: %s' % self.node.peers
+        print 'routing table: %s' % self.node.routing_table
+        print 'queries: %s' % self.node.queries
+        print 'host: %s' % self.node.host
+        print 'node id: %s' % self.node.id
+        # print 'last query result: \n%s' % self.node.last_query_result
 
     def ping_received(self, addr):
         host, port = addr
