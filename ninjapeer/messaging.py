@@ -134,7 +134,7 @@ class MessagingProtocol(protocol.DatagramProtocol):
         else:
             print 'Passing match back'
             if datagram['QUERY_ID'] in self.node.queries:
-                next_hop = self.node.queries['QUERY_ID']
+                next_hop = self.node.queries[datagram['QUERY_ID']]
                 serialized_datagram = json.dumps(datagram)
                 self.transport.write(
                     serialized_datagram,
