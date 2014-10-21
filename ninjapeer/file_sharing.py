@@ -1,5 +1,3 @@
-import time
-
 __author__ = 'jkozlowicz'
 from util import STORAGE_DIR, APP_DATA_DIR, TEMP_DIR
 
@@ -8,6 +6,8 @@ from twisted.web.xmlrpc import Proxy
 
 from twisted.internet import task
 
+import time
+
 import xmlrpclib
 
 import os
@@ -15,7 +15,7 @@ import os
 import hashlib
 
 RPC_PORT = 7090
-CHUNK_SIZE = 1024**2
+CHUNK_SIZE = (1024**2)*10
 DOWNLOAD_RATE_UPDATE_INTERVAL = 1
 
 
