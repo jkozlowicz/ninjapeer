@@ -261,7 +261,7 @@ class FileSharingService(xmlrpc.XMLRPC):
                             file_name,
                             chunk_num
                         )
-                        d.addCallback(chunk_to_pass_arrived)
+                        d.addCallback(lambda res: res)
                         #TODO: add errback
                     except xmlrpclib.Fault as fault:
                         if fault.faultCode == 100:
