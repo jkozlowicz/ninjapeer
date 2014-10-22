@@ -141,6 +141,25 @@ class Transfer(object):
             bytes_received / (time.time() - start_time)
         )
 
+    def chunk_wasted(self):
+        self.wasted[self.curr_chunk] = self.wasted.get(self.curr_chunk, 0) + 1
+
+    def save_chunk(self, chunk):
+        self.curr_chunk += 1
+        f_path = os.path.join(TEMP_DIR, self.file_name)
+        mode = 'w' if self.curr_chunk == 0 else 'a'
+        with open(f_path, mode) as f:
+            f.write(chunk)
+        self.bytes_received += len(chunk)
+        self.aggregated_hash.update(chunk)
+
+    def finalize(self):
+        self.deferred = None
+        self.proxy = None
+        self.download_rate_loop.stop()
+        self.download_rate_loop = None
+        self.status = Transfer.statuses['FINISHED']
+
 
 class Downloader(object):
     def __init__(self, node):
@@ -190,20 +209,15 @@ class Downloader(object):
         return checksum == hashlib.md5(chunk_data).hexdigest()
 
     def chunk_received(self, result, transfer):
-        curr_chunk = transfer['curr_chunk']
         print 'Received chunk nr %s of file "%s"' % (
-            curr_chunk, transfer.file_name
+            transfer.curr_chunk, transfer.file_name
         )
-        from pprint import pprint
-        pprint(transfer)
-        checksum = transfer.pieces[curr_chunk]
+        checksum = transfer.pieces[transfer.curr_chunk]
 
         if Downloader.if_checksum_matches(checksum, result.data):
-            self.save_chunk(result.data, transfer)
+            transfer.save_chunk(result.data)
         else:
-            chunks_wasted = transfer.wasted.get(curr_chunk, 0)
-            chunks_wasted += 1
-            transfer.wasted[curr_chunk] = chunks_wasted
+            transfer.chunk_wasted()
 
         if not len(transfer.pieces) == transfer.curr_chunk:
             #should be atomic; curr_chunk gets incremented, the corresponding
@@ -211,28 +225,12 @@ class Downloader(object):
             self.request_next_chunk(transfer)
         else:
             print 'File %s assembled successfully' % transfer.file_name
-            self.finalize(transfer)
-
-    def finalize(self, transfer):
-        transfer.deferred = None
-        transfer.proxy = None
-        transfer.rate_loop.stop()
-        transfer.rate_loop = None
-        transfer.status = Transfer.statuses['FINISHED']
+            transfer.finalize()
 
     def chunk_failed(self, failure):
         print 'chunk failed'
         print failure
         pass
-
-    def save_chunk(self, chunk, transfer):
-        transfer.curr_chunk += 1
-        f_path = os.path.join(TEMP_DIR, transfer.file_name)
-        mode = 'w' if transfer.curr_chunk == 0 else 'a'
-        with open(f_path, mode) as f:
-            f.write(chunk)
-        transfer.bytes_received += len(chunk)
-        transfer.aggregated_hash.update(chunk)
 
 
 def chunk_to_pass_arrived(result):
@@ -260,24 +258,25 @@ class FileSharingService(xmlrpc.XMLRPC):
             intermediaries = self.node.routing_table.get(owner_id, None)
             if intermediaries:
                 for host in intermediaries:
-                    try:
-                        proxy = Proxy(
-                            'http://' + ':'.join([host, str(RPC_PORT)])
-                        )
-                        d = proxy.callRemote(
-                            'get_file_chunk',
-                            owner_id,
-                            file_name,
-                            chunk_num
-                        )
-                        d.addCallback(lambda res: res)
-                        #TODO: add errback
-                    except xmlrpclib.Fault as fault:
-                        if fault.faultCode == 100:
-                            raise
-                        elif fault.faultCode == 101:
-                            self.node.routing_table[owner_id].remove(host)
-                    except xmlrpclib.ProtocolError as err:
-                        self.node.routing_table[owner_id].remove(host)
-                        del self.node.peers[host]
+                    # try:
+                    proxy = Proxy(
+                        'http://' + ':'.join([host, str(RPC_PORT)])
+                    )
+                    d = proxy.callRemote(
+                        'get_file_chunk',
+                        owner_id,
+                        file_name,
+                        chunk_num
+                    )
+                    d.addCallback(lambda res: res)
+                    return d
+                    #TODO: add errback
+                    # except xmlrpclib.Fault as fault:
+                    #     if fault.faultCode == 100:
+                    #         raise
+                    #     elif fault.faultCode == 101:
+                    #         self.node.routing_table[owner_id].remove(host)
+                    # except xmlrpclib.ProtocolError as err:
+                    #     self.node.routing_table[owner_id].remove(host)
+                    #     del self.node.peers[host]
             raise xmlrpc.Fault(101, "No route found for %s." % owner_id)
