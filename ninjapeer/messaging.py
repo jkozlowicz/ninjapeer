@@ -26,10 +26,11 @@ class MessagingProtocol(protocol.DatagramProtocol):
         print 'Starting node'
         self.ping_loop = task.LoopingCall(self.send_ping)
         self.start_pinging()
-        task2 = task.LoopingCall(self.display_connections)
-        task2.start(7, now=False)
+        # task2 = task.LoopingCall(self.display_connections)
+        # task2.start(7, now=False)
 
     def display_connections(self):
+        print '============================'
         print 'peers: %s' % self.node.peers
         print 'routing table: %s' % self.node.routing_table
         print 'queries: %s' % self.node.queries

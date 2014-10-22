@@ -107,7 +107,7 @@ class Transfer(object):
     }
 
     def __init__(self, matched_file, node_id, host):
-        self.file_name = matched_file['f_name']
+        self.file_name = matched_file['name']
         self.size = matched_file['size']
         self.pieces = matched_file['pieces']
         self.hash = matched_file['hash']
@@ -122,7 +122,7 @@ class Transfer(object):
         self.proxy = Proxy('http://' + ':'.join([host, str(RPC_PORT)]))
         self.deferred = None
         self.download_rate_loop = task.LoopingCall(
-            self.update_download_rate, matched_file['name']
+            self.update_download_rate
         )
         self.wasted = {}
 
