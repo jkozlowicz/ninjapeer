@@ -61,6 +61,7 @@ class MessagingProtocol(protocol.DatagramProtocol):
             self.ping_loop.start(PING_INTERVAL)
 
     def datagramReceived(self, datagram, addr):
+        import ipdb;ipdb.set_trace()
         host, port = addr
         datagram = json.loads(datagram)
         if not (self.self_generated(host, datagram) or

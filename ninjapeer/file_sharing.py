@@ -99,6 +99,34 @@ def get_files_info(files):
     return info
 
 
+class Transfer(object):
+    statuses = {
+        'DOWNLOADING': 1,
+        'STOPPED': 2,
+        'FINISHED': 3,
+    }
+
+    def __init__(self, matched_file, node_id, host):
+        self.size = matched_file['size']
+        self.pieces = matched_file['pieces']
+        self.hash = matched_file['hash']
+        self.owner = node_id
+        self.curr_chunk = 0
+        self.bytes_received = 0
+        self.download_rate = 0.0
+        self.start_time = time.time()
+        self.status = Transfer.statuses['DOWNLOADING']
+        self.aggregated_hash = hashlib.md5()
+        self.ETA = None
+        self.proxy = Proxy('http://' + ':'.join([host, str(RPC_PORT)]))
+        self.owner = node_id
+        self.deferred = None
+        self.download_rate_loop = task.LoopingCall(
+            self.update_download_rate, matched_file['name']
+        )
+        self.wasted = {}
+
+
 class Downloader(object):
     def __init__(self, node):
         self.node = node
@@ -158,7 +186,6 @@ class Downloader(object):
                 self.update_download_rate, matched_file['name']
             ),
             'wasted': {},
-            'done': False,
         }
 
     def update_download_rate(self, f_name):
@@ -209,7 +236,6 @@ class Downloader(object):
         self.node.transfers[f_name]['proxy'] = None
         self.node.transfers[f_name]['rate_loop'].stop()
         self.node.transfers[f_name]['rate_loop'] = None
-        self.node.transfers[f_name]['done'] = True
         self.node.transfers[f_name]['status'] = 'FINISHED'
 
     def chunk_failed(self, failure):
