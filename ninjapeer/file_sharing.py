@@ -78,8 +78,8 @@ def create_dir_structure():
         os.makedirs(TEMP_DIR)
 
 
-def get_matching_files(query):
-    files = os.listdir(STORAGE_DIR)
+def get_matching_files(query, files=None):
+    files = files or os.listdir(STORAGE_DIR)
     terms = query.split()
     results = []
     for f in files:
@@ -107,6 +107,7 @@ class Transfer(object):
     }
 
     def __init__(self, matched_file, node_id, host):
+        self.file_name = matched_file['f_name']
         self.size = matched_file['size']
         self.pieces = matched_file['pieces']
         self.hash = matched_file['hash']
@@ -119,12 +120,26 @@ class Transfer(object):
         self.aggregated_hash = hashlib.md5()
         self.ETA = None
         self.proxy = Proxy('http://' + ':'.join([host, str(RPC_PORT)]))
-        self.owner = node_id
         self.deferred = None
         self.download_rate_loop = task.LoopingCall(
             self.update_download_rate, matched_file['name']
         )
         self.wasted = {}
+
+    def start_download_rate_loop(self):
+        self.download_rate_loop.start(
+            DOWNLOAD_RATE_UPDATE_INTERVAL, now=False
+        )
+
+    def stop_download_rate_loop(self):
+        self.download_rate_loop.stop()
+
+    def update_download_rate(self):
+        bytes_received = self.bytes_received
+        start_time = self.start_time
+        self.download_rate = (
+            bytes_received / (time.time() - start_time)
+        )
 
 
 class Downloader(object):
@@ -151,105 +166,73 @@ class Downloader(object):
             pass
         else:
             host = intermediaries[0]
-            self.node.transfers[f_name] = self.create_transfer(
-                matched_file, node_id, host
-            )
-            self.node.transfers[f_name]['rate_loop'].start(
-                DOWNLOAD_RATE_UPDATE_INTERVAL, now=False
-            )
-            d = self.node.transfers[f_name]['proxy'].callRemote(
-                'get_file_chunk', node_id, f_name, 0
-            ).addCallbacks(
-                self.chunk_received,
-                self.chunk_failed,
-                callbackKeywords={'f_name': f_name},
-                errbackKeywords={'f_name': f_name},
-            )
-            self.node.transfers[f_name]['deferred'] = d
+            transfer = Transfer(matched_file, node_id, host)
+            transfer.start_download_rate_loop()
+            self.request_next_chunk(transfer)
+            self.node.transfers[f_name] = transfer
 
-    def create_transfer(self, matched_file, node_id, host):
-        return {
-            'pieces': matched_file['pieces'],
-            'hash': matched_file['hash'],
-            'size': matched_file['size'],
-            'OWNER': node_id,
-            'curr_chunk': 0,
-            'proxy': Proxy('http://' + ':'.join([host, str(RPC_PORT)])),
-            'bytes_received': 0,
-            'download_rate': 0.0,
-            'start_time': time.time(),
-            'status': 'DOWNLOADING',
-            'aggregated_hash': hashlib.md5(),
-            'ETA': None,
-            'deferred': None,
-            'rate_loop': task.LoopingCall(
-                self.update_download_rate, matched_file['name']
-            ),
-            'wasted': {},
-        }
-
-    def update_download_rate(self, f_name):
-        bytes_received = self.node.transfers[f_name]['bytes_received']
-        start_time = self.node.transfers[f_name]['start_time']
-        self.node.transfers[f_name]['download_rate'] = (
-            bytes_received / (time.time() - start_time)
+    def request_next_chunk(self, transfer):
+        transfer.deferred = transfer.proxy.callRemote(
+            'get_file_chunk',
+            transfer.owner,
+            transfer.file_name,
+            transfer.curr_chunk
+        )
+        transfer.deferred.addCallbacks(
+            self.chunk_received,
+            self.chunk_failed,
+            callbackKeywords={'transfer': transfer},
+            errbackKeywords={'transfer': transfer},
         )
 
-    def chunk_received(self, result, f_name):
-        transfer = self.node.transfers[f_name]
+    @staticmethod
+    def if_checksum_matches(checksum, chunk_data):
+        return checksum == hashlib.md5(chunk_data).hexdigest()
+
+    def chunk_received(self, result, transfer):
         curr_chunk = transfer['curr_chunk']
-        print 'Received chunk nr %s of file "%s"' % (curr_chunk, f_name)
-        checksum = self.node.transfers[f_name]['pieces'][curr_chunk]
+        print 'Received chunk nr %s of file "%s"' % (
+            curr_chunk, transfer.file_name
+        )
+        from pprint import pprint
+        pprint(transfer)
+        checksum = transfer.pieces[curr_chunk]
 
-        if checksum == hashlib.md5(result.data).hexdigest():
-            self.node.transfers[f_name]['curr_chunk'] += 1
-            self.save_chunk(result.data, curr_chunk, f_name)
-
+        if Downloader.if_checksum_matches(checksum, result.data):
+            self.save_chunk(result.data, transfer)
         else:
-            chunks_wasted = self.node.transfers[f_name]['wasted'].get(
-                curr_chunk, 0
-            )
+            chunks_wasted = transfer.wasted.get(curr_chunk, 0)
             chunks_wasted += 1
-            self.node.transfers[f_name]['wasted'] = chunks_wasted
+            transfer.wasted[curr_chunk] = chunks_wasted
 
-        if not len(transfer['pieces']) == transfer['curr_chunk']:
-            #it can happen that curr_chunk gets incremented, the corresponding
+        if not len(transfer.pieces) == transfer.curr_chunk:
+            #should be atomic; curr_chunk gets incremented, the corresponding
             #chunk does not arrive and application breaks in the meantime
-            proxy = transfer['proxy']
-            d = proxy.callRemote(
-                'get_file_chunk',
-                self.node.transfers[f_name]['OWNER'],
-                f_name,
-                self.node.transfers[f_name]['curr_chunk']
-            ).addCallbacks(
-                self.chunk_received,
-                self.chunk_failed,
-                callbackKeywords={'f_name': f_name}
-            )
-            self.node.transfers[f_name]['deferred'] = d
+            self.request_next_chunk(transfer)
         else:
-            print 'File %s assembled successfully' % f_name
-            self.finalize(f_name)
+            print 'File %s assembled successfully' % transfer.file_name
+            self.finalize(transfer)
 
-    def finalize(self, f_name):
-        self.node.transfers[f_name]['deferred'] = None
-        self.node.transfers[f_name]['proxy'] = None
-        self.node.transfers[f_name]['rate_loop'].stop()
-        self.node.transfers[f_name]['rate_loop'] = None
-        self.node.transfers[f_name]['status'] = 'FINISHED'
+    def finalize(self, transfer):
+        transfer.deferred = None
+        transfer.proxy = None
+        transfer.rate_loop.stop()
+        transfer.rate_loop = None
+        transfer.status = Transfer.statuses['FINISHED']
 
     def chunk_failed(self, failure):
         print 'chunk failed'
         print failure
         pass
 
-    def save_chunk(self, chunk, chunk_num, file_name):
-        f_path = os.path.join(TEMP_DIR, file_name)
-        mode = 'w' if chunk_num == 0 else 'a'
+    def save_chunk(self, chunk, transfer):
+        transfer.curr_chunk += 1
+        f_path = os.path.join(TEMP_DIR, transfer.file_name)
+        mode = 'w' if transfer.curr_chunk == 0 else 'a'
         with open(f_path, mode) as f:
             f.write(chunk)
-        self.node.transfers[file_name]['bytes_received'] += len(chunk)
-        self.node.transfers[file_name]['aggregated_hash'].update(chunk)
+        transfer.bytes_received += len(chunk)
+        transfer.aggregated_hash.update(chunk)
 
 
 def chunk_to_pass_arrived(result):
