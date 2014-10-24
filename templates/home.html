@@ -22,19 +22,19 @@
         <div id="download-progress-table-wrapper">
             <table class="table table-condensed" id="home-items-table">
                 <thead id="home-items-table-header">
-                    <th>Name</th>
-                    <th>Progress</th>
-                    <th>Size</th>
-                    <th>Status</th>
-                    <th>Download rate</th>
-                    <th>ETA</th>
-                    <th>Added on</th>
+                    <th class="transfer-name">Name</th>
+                    <th class="transfer-progress">Progress</th>
+                    <th class="transfer-size">Size</th>
+                    <th class="transfer-status">Status</th>
+                    <th class="transfer-download-rate">Download rate</th>
+                    <th class="transfer-eta">ETA</th>
+                    <th class="transfer-added-on">Added on</th>
                 </thead>
                 <tbody>
 
                     <tr class="home-item hidden">
                         <td class="vert-align transfer-name"></td>
-                        <td class="vert-align progress-wrapper">
+                        <td class="vert-align progress-wrapper transfer-progress">
                             <div class="progress">
                                 <div class="progress-bar progress-bar-success transfer-progress-bar"  role="progressbar" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100" style="width: 45%">
                                 </div>
@@ -57,56 +57,6 @@
                         <td class="vert-align transfer-downloaded hidden"></td>
                     </tr>
 
-                    <tr class="home-item">
-                        <td class="vert-align transfer-name">asdsa</td>
-                        <td class="vert-align progress-wrapper">
-                            <div class="progress">
-                                <div class="progress-bar progress-bar-success transfer-progress-bar"  role="progressbar" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100" style="width: 45%">
-                                </div>
-                            </div>
-                        </td>
-                        <td class="vert-align transfer-size">286.65 MB</td>
-                        <td class="vert-align transfer-status">Downloading</td>
-
-                        <td class="vert-align transfer-download-rate">1.82 MB/s</td>
-                        <td class="vert-align transfer-eta">11m 31s</td>
-                        <td class="vert-align transfer-added-on">2014-10-24 18:54</td>
-
-
-                        <td class="vert-align transfer-hash hidden">aads</td>
-                        <td class="vert-align transfer-chunk-size hidden">asdad</td>
-                        <td class="vert-align transfer-save-as hidden"></td>
-                        <td class="vert-align transfer-wasted hidden"></td>
-                        <td class="vert-align transfer-time-elapsed hidden"></td>
-                        <td class="vert-align transfer-pieces hidden"></td>
-                        <td class="vert-align transfer-downloaded hidden"></td>
-                    </tr>
-
-                    <tr class="home-item">
-                        <td class="vert-align transfer-name">asdsa</td>
-                        <td class="vert-align progress-wrapper">
-                            <div class="progress">
-                                <div class="progress-bar progress-bar-success transfer-progress-bar"  role="progressbar" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100" style="width: 45%">
-                                </div>
-                            </div>
-                        </td>
-                        <td class="vert-align transfer-size">286.65 MB</td>
-                        <td class="vert-align transfer-status">Downloading</td>
-
-                        <td class="vert-align transfer-download-rate">1.82 MB/s</td>
-                        <td class="vert-align transfer-eta">11m 31s</td>
-                        <td class="vert-align transfer-added-on">2014-10-24 18:54</td>
-
-
-                        <td class="vert-align transfer-hash hidden">aads</td>
-                        <td class="vert-align transfer-chunk-size hidden">asdad</td>
-                        <td class="vert-align transfer-save-as hidden"></td>
-                        <td class="vert-align transfer-wasted hidden"></td>
-                        <td class="vert-align transfer-time-elapsed hidden"></td>
-                        <td class="vert-align transfer-pieces hidden"></td>
-                        <td class="vert-align transfer-downloaded hidden"></td>
-                    </tr>
-
                 </tbody>
             </table>
         </div>
@@ -115,8 +65,8 @@
 
             <div id="transfer-details" class="container-fluid">
                 <div id="download-progress-bar-wrapper">
-                    <div class="progress hidden">
-                        <div class="progress-bar progress-bar-success" role="progressbar" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100" style="width: 45%">
+                    <div class="progress">
+                        <div class="progress-bar progress-bar-success item-details-progress-bar hidden" role="progressbar" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100" style="width: 45%">
                             <!--<span>100%</span>-->
                         </div>
                     </div>

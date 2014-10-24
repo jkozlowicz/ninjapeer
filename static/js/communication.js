@@ -1,5 +1,6 @@
 var websockAddr = "ws://" + window.location.hostname + ":8888";
 var websocket = null;
+var downloadTransfers = [];
 
 function init() {
     websocket = new WebSocket(websockAddr);
@@ -21,7 +22,7 @@ function onOpen(e) {
 }
 
 function onMessage(e) {
-    console.log(e.data);
+//    console.log(e.data);
     var msg = $.parseJSON(e.data);
     if(msg.event == 'MATCH'){
 
@@ -30,6 +31,7 @@ function onMessage(e) {
     }else if(msg.event == 'PROGRESS'){
 
         renderProgress(msg.content);
+        downloadTransfers = msg.content;
 
     }
 }

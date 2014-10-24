@@ -112,18 +112,22 @@ def days_hours_minutes_seconds(td):
     return td.days, td.seconds / 3600, (td.seconds / 60) % 60, td.seconds % 60
 
 
+def format_time(seconds):
+    result = datetime.timedelta(seconds=seconds)
+    days, hours, minutes, secs = days_hours_minutes_seconds(result)
+    if days > 0:
+        return '%dd %dh' % (days, hours)
+    elif days == 0 and hours > 0:
+        return '%dh %dm' % (hours, minutes)
+    else:
+        return '%dm %ds' % (minutes, secs)
+
+
 def format_eta(eta):
     if eta > MAX_ETA:
         return '-'
     else:
-        eta_td = datetime.timedelta(seconds=eta)
-        days, hours, minutes, secs = days_hours_minutes_seconds(eta_td)
-        if days > 0:
-            return '%dd %dh' % (days, hours)
-        elif days == 0 and hours > 0:
-            return '%dh %dm' % (hours, minutes)
-        else:
-            return '%dm %ds' % (minutes, secs)
+        return format_time(eta)
 
 
 def calculate_progress(bytes_received, total_size):
@@ -201,6 +205,7 @@ class Transfer(object):
         self.update_time_rates()
         self.completed_on = datetime.datetime.now().strftime(DATE_TIME_FORMAT)
 
+
 class Downloader(object):
     def __init__(self, node):
         self.node = node
@@ -214,8 +219,8 @@ class Downloader(object):
                     break
 
     def download(self, matched_file, node_id):
-        f_name = matched_file['name']
-        if f_name in self.node.transfers:
+        file_hash = matched_file['hash']
+        if file_hash in self.node.transfers:
             #TODO: if state loaded from file, transfer needs to be continued
             return
         intermediaries = self.node.routing_table.get(node_id, None)
@@ -228,7 +233,7 @@ class Downloader(object):
             transfer = Transfer(matched_file, node_id, host)
             transfer.start_download_rate_loop()
             self.request_next_chunk(transfer)
-            self.node.transfers[f_name] = transfer
+            self.node.transfers[file_hash] = transfer
             self.node.interface.start_displaying_download_progress()
 
     def request_next_chunk(self, transfer):
@@ -271,6 +276,17 @@ class Downloader(object):
     def chunk_failed(self, failure):
         print 'chunk failed'
         print failure
+        pass
+
+    def pause_transfer(self, file_hash):
+        self.node.transfers[file_hash].deferred.pause()
+        self.node.transfers[file_hash].status = 'PAUSED'
+
+    def resume_transfer(self, file_hash):
+        self.node.transfers[file_hash].deferred.unpause()
+        self.node.transfers[file_hash].status = 'DOWNLOADING'
+
+    def remove_transfer(self, file_hash):
         pass
 
 

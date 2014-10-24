@@ -5,9 +5,14 @@ $(document).ready(function(){
     $('body').on("click", "table tbody tr td a", onClickDownloadFile);
     $(".stop-download-file").click(onClickStopDownloadFile);
     $(".delete-file").click(onClickDeleteFile);
+    $("#download-pause-btn").click(onClickPauseBtn);
+    $("#download-resume-btn").click(onClickResumeBtn);
+    $("#download-remove-btn").click(onClickRemoveBtn);
     initDownloadProgressTable();
 
 });
+
+var focusedDownloadRow = null;
 
 var getFileDetails = function(elem){
     /** currRow stores reference to parent <tr> element*/
@@ -141,15 +146,11 @@ var renderProgress = function(transfers){
             return $(this).text() == transfers[i].hash;
         });
 
-        if(detailsHashElement.length > 1){
-            updateDownloadDetails(transfers[i]);
+        if(detailsHashElement.length > 0){
+            displayItemDetails(transfers[i]);
         }
 
     }
-};
-
-var updateDownloadDetails = function(transfer){
-
 };
 
 var capitalize = function(s){
@@ -222,12 +223,58 @@ var initDownloadProgressTable = function(){
 var onClickDownloadRow = function(){
     var hash = $(this).find('td.transfer-hash').text();
     var status = $(this).find('td.transfer-status').text().toLowerCase();
+    focusedDownloadRow = hash;
     $("#home-items-table tr").removeClass("highlight");
     $(this).addClass("highlight");
-    alert('you clicked ' + $(this).find('td.transfer-name').text());
-    displayItemDetails(hash);
     enableButtons(status);
+
+    for(var i=0; i<downloadTransfers.length ; i++){
+        if(hash === downloadTransfers[i].hash){
+            displayItemDetails(downloadTransfers[i]);
+            break;
+        }
+    }
+
 };
+
+var displayItemDetails = function(transfer){
+
+    $('.item-details-downloaded').text(formatFileSize(transfer['bytes_received']));
+    $('.item-details-piece-size').text(formatFileSize(transfer['chunk_size']));
+    $('.item-details-total-size').text(formatFileSize(transfer['size']));
+
+    $('.item-details-time-elapsed').text(transfer['time_elapsed']);
+    $('.item-details-status').text(transfer['status']);
+
+    if(transfer['status'] === 'FINISHED'){
+        $('.item-details-eta').text('-');
+        $('.item-details-download-rate').text('-');
+    }else{
+        $('.item-details-eta').text(transfer['ETA']);
+        $('.item-details-download-rate').text(transfer['download_rate']);
+    }
+
+    var numOfChunks = transfer['num_of_chunks'].toString();
+    var currChunk = transfer['curr_chunk'].toString();
+    var chunkSize = formatFileSize(transfer['chunk_size']);
+    $('.item-details-pieces').text(
+            numOfChunks + ' x ' + chunkSize + ' (have ' + currChunk + ')'
+    );
+
+    $('.item-details-wasted').text(transfer['wasted'] + ' checksum failed');
+    $('.item-details-name').text(transfer['file_name']);
+    $('.item-details-save-as').text(transfer['path']);
+    $('.item-details-hash').text(transfer['hash']);
+    $('.item-details-added-on').text(transfer['added_on']);
+
+    var $progressBar = $('.item-details-progress-bar');
+    var $progressBarClone = $progressBar.clone();
+    $progressBar.attr('style', 'width: ' + transfer['progress'].toString() + '%');
+    $progressBar.attr('aria-valuenow', transfer['progress']);
+    $progressBar.removeClass('hidden');
+
+};
+
 
 var enableButtons = function(status){
     if(status == 'downloading'){
@@ -248,11 +295,6 @@ var enableButtons = function(status){
         disableRemoveBtn();
     }
 };
-
-var displayItemDetails = function(hash){
-
-};
-
 var enableResumeBtn = function(){
     $('#download-resume-btn').prop('disabled', false);
 };
@@ -277,8 +319,20 @@ var disableRemoveBtn = function(){
     $('#download-remove-btn').prop('disabled', true);
 };
 
+var onClickPauseBtn = function(){
+    sendAction("PAUSE", focusedDownloadRow);
+};
 
+var onClickResumeBtn = function(){
+    sendAction("RESUME", focusedDownloadRow);
+};
 
+var onClickRemoveBtn = function(){
+    var confirmed = confirm("Are you sure?");
+    if(confirmed){
+        sendAction("REMOVE", focusedDownloadRow);
+    }
+};
 
 
 

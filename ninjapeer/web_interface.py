@@ -2,7 +2,8 @@ __author__ = 'jkozlowicz'
 
 from django.conf import settings
 
-from file_sharing import convert_bytes, format_download_rate, format_eta
+from file_sharing import convert_bytes, format_download_rate, format_eta, \
+    format_time
 
 from util import TEMPLATE_DIRS, STATIC_PATH
 
@@ -111,6 +112,12 @@ class WebInterfaceProtocol(protocol.Protocol):
             if self.factory.node.last_query_result:
                 for result in self.factory.node.last_query_result:
                     self.factory.display_match(result)
+        elif action == 'PAUSE':
+            self.factory.node.downloader.pause_transfer(val)
+        elif action == 'RESUME':
+            self.factory.node.downloader.resume_transfer(val)
+        elif action == 'REMOVE':
+            self.factory.node.downloader.pause_transfer(val)
         else:
             pass
 
@@ -153,10 +160,10 @@ class WebInterfaceFactory(protocol.Factory):
             'event': 'PROGRESS',
             'content': []
         }
-        for file_name, transfer in self.node.transfers.items():
+        for file_hash, transfer in self.node.transfers.items():
             msg['content'].append(
                 {
-                    'file_name': file_name,
+                    'file_name': transfer.file_name,
                     'size': convert_bytes(transfer.size),
                     'curr_chunk': transfer.curr_chunk,
                     'num_of_chunks': transfer.num_of_chunks,
@@ -169,7 +176,7 @@ class WebInterfaceFactory(protocol.Factory):
                     'chunk_size': convert_bytes(transfer.chunk_size),
                     'hash': transfer.hash,
                     'path': transfer.path,
-                    'time_elapsed': '.2f' % transfer.time_elapsed,
+                    'time_elapsed': format_time(transfer.time_elapsed),
                     'progress': transfer.progress
                 }
             )
