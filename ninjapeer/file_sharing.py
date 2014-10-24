@@ -151,6 +151,8 @@ class Transfer(object):
         self.bytes_received = 0
         self.download_rate = 0.0
         self.start_time = time.time()
+        self.paused_time_temp = 0.0
+        self.paused_time = 0.0
         self.time_elapsed = 0.0
         self.status = 'DOWNLOADING'
         self.aggregated_hash = hashlib.md5()
@@ -166,9 +168,9 @@ class Transfer(object):
         self.path = os.path.join(TEMP_DIR, self.file_name)
         self.progress = 0.0
 
-    def start_download_rate_loop(self):
+    def start_download_rate_loop(self, now=False):
         self.download_rate_loop.start(
-            DOWNLOAD_RATE_UPDATE_INTERVAL, now=False
+            DOWNLOAD_RATE_UPDATE_INTERVAL, now=now
         )
 
     def stop_download_rate_loop(self):
@@ -178,7 +180,7 @@ class Transfer(object):
         self.download_rate = (
             self.bytes_received / (time.time() - self.start_time)
         )
-        self.time_elapsed = time.time() - self.start_time
+        self.time_elapsed = time.time() - self.start_time - self.paused_time
         self.progress = calculate_progress(self.bytes_received, self.size)
         if self.download_rate > 0:
             self.eta = (self.size - self.bytes_received) / self.download_rate
@@ -279,12 +281,20 @@ class Downloader(object):
         pass
 
     def pause_transfer(self, file_hash):
-        self.node.transfers[file_hash].deferred.pause()
-        self.node.transfers[file_hash].status = 'PAUSED'
+        transfer = self.node.transfers[file_hash]
+        transfer.deferred.pause()
+        transfer.status = 'PAUSED'
+        transfer.stop_download_rate_loop()
+        transfer.download_rate = 0.0
+        transfer.eta = MAX_ETA + 1
+        transfer.paused_time_temp = time.time()
 
     def resume_transfer(self, file_hash):
-        self.node.transfers[file_hash].deferred.unpause()
-        self.node.transfers[file_hash].status = 'DOWNLOADING'
+        transfer = self.node.transfers[file_hash]
+        transfer.deferred.unpause()
+        transfer.status = 'DOWNLOADING'
+        transfer.paused_time += (time.time() - transfer.paused_time_temp)
+        transfer.start_download_rate_loop(now=True)
 
     def remove_transfer(self, file_hash):
         pass

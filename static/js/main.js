@@ -12,7 +12,7 @@ $(document).ready(function(){
 
 });
 
-var focusedDownloadRow = null;
+var focusedDownloadRowHash = null;
 
 var getFileDetails = function(elem){
     /** currRow stores reference to parent <tr> element*/
@@ -223,7 +223,7 @@ var initDownloadProgressTable = function(){
 var onClickDownloadRow = function(){
     var hash = $(this).find('td.transfer-hash').text();
     var status = $(this).find('td.transfer-status').text().toLowerCase();
-    focusedDownloadRow = hash;
+    focusedDownloadRowHash = hash;
     $("#home-items-table tr").removeClass("highlight");
     $(this).addClass("highlight");
     enableButtons(status);
@@ -320,17 +320,21 @@ var disableRemoveBtn = function(){
 };
 
 var onClickPauseBtn = function(){
-    sendAction("PAUSE", focusedDownloadRow);
+    sendAction("PAUSE", focusedDownloadRowHash);
+    enableResumeBtn();
+    disablePauseBtn();
 };
 
 var onClickResumeBtn = function(){
-    sendAction("RESUME", focusedDownloadRow);
+    sendAction("RESUME", focusedDownloadRowHash);
+    enablePauseBtn();
+    disableResumeBtn();
 };
 
 var onClickRemoveBtn = function(){
     var confirmed = confirm("Are you sure?");
     if(confirmed){
-        sendAction("REMOVE", focusedDownloadRow);
+        sendAction("REMOVE", focusedDownloadRowHash);
     }
 };
 
