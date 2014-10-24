@@ -143,7 +143,7 @@ class WebInterfaceFactory(protocol.Factory):
 
     def start_displaying_download_progress(self):
         if self.progress_loop is None:
-            self.progress_loop = task.LoopingCall(self.display_connections)
+            self.progress_loop = task.LoopingCall(self.display_download_progress)
         self.progress_loop.start(PROGRESS_DISPLAY_INTERVAL, now=True)
 
     def stop_displaying_download_progress(self):
@@ -154,10 +154,10 @@ class WebInterfaceFactory(protocol.Factory):
             'event': 'PROGRESS',
             'content': []
         }
-        for transfer in self.node.transfers:
+        for file_name, transfer in self.node.transfers.items():
             msg['content'].append(
                 {
-                    'file_name': transfer.file_name,
+                    'file_name': file_name,
                     'size': convert_bytes(transfer.size),
                     'curr_chunk': transfer.curr_chunk,
                     'num_of_chunks': transfer.num_of_chunks,
@@ -167,10 +167,10 @@ class WebInterfaceFactory(protocol.Factory):
                     'ETA': transfer.ETA,
                     'wasted': sum(transfer.wasted.values()),
                     'added_on': transfer.added_on,
-                    'piece_size': transfer.piece_size,
-                    'save_as': '',
+                    'chunk_size': convert_bytes(transfer.chunk_size),
                     'hash': transfer.hash,
-                    'path': transfer.path
+                    'path': transfer.path,
+                    'time_elapsed': transfer.time_elapsed,
                 }
             )
         self.client.transport.write(json.dumps(msg))

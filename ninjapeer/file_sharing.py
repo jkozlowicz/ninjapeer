@@ -114,7 +114,7 @@ class Transfer(object):
         self.size = matched_file['size']
         self.pieces = matched_file['pieces']
         self.hash = matched_file['hash']
-        self.piece_size = CHUNK_SIZE
+        self.chunk_size = CHUNK_SIZE
         self.owner = node_id
         self.curr_chunk = 0
         self.num_of_chunks = len(self.pieces)
@@ -198,6 +198,7 @@ class Downloader(object):
             transfer.start_download_rate_loop()
             self.request_next_chunk(transfer)
             self.node.transfers[f_name] = transfer
+            self.node.interface.start_displaying_download_progress()
 
     def request_next_chunk(self, transfer):
         transfer.deferred = transfer.proxy.callRemote(

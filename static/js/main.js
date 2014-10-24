@@ -61,7 +61,7 @@ var renderMatchResult = function(lastMatchResult){
             continue;
         }
 
-        var fileSize = formatFileSize(result);
+        var fileSize = formatFileSize(result.size);
 
         var row = '<tr class="result-item">' +
         '<td class="vert-align result-name">' + result.name + '</td>' +
@@ -124,8 +124,58 @@ var requestLastQueryResult = function(){
     sendAction("LAST_QUERY_RESULT", null);
 };
 
-var renderProgress = function(msg){
-    console.log(msg);
+var renderProgress = function(transfers){
+    console.log(transfers);
+//    var $rows = $('#home-items-table tr.home-item');
+    debugger;
+    for(var i=0; i<transfers.length; i++){
+
+        var row = $('td.transfer-hash').filter(function() {
+            return $(this).text() == transfers[i].hash;
+        }).closest("tr");
+
+        if(row.length > 0){
+            updateProgressRow(row, transfers[i]);
+        }else{
+            appendProgressRow(row, transfers[i]);
+        }
+    }
+};
+
+var capitalize = function(s){
+    return s[0].toUpperCase() + s.slice(1).toLowerCase();
+};
+
+var updateProgressRow = function(row, transfer){
+
+    $(row).find('.transfer-name').text(transfer['file_name']);
+    $(row).find('.transfer-size').text(transfer['size']);
+    $(row).find('.transfer-status').text(capitalize(transfer['status']));
+    $(row).find('.transfer-download-rate').text(transfer['download_rate']);
+    $(row).find('.transfer-eta').text(transfer['ETA']);
+    $(row).find('.transfer-added-on').text(transfer['size']);
+    $(row).find('.transfer-hash').text(transfer['hash']);
+
+    var numOfChunks = transfer['num_of_chunks'].toString();
+    var currChunk = transfer['curr_chunk'].toString();
+    var chunkSize = transfer['chunk_size'];
+
+    $(row).find('.transfer-chunk-size').text(chunkSize);
+    $(row).find('.transfer-save-as').text(transfer['path']);
+    $(row).find('.transfer-wasted').text(transfer['hash']);
+    $(row).find('.transfer-time-elapsed').text(transfer['time_elapsed']);
+    $(row).find('.transfer-pieces').text(
+            numOfChunks + ' x ' + chunkSize + '(have ' + currChunk + ')'
+    );
+    $(row).find('.transfer-downloaded').text(transfer['bytes_received']);
+    $(row).removeClass('hidden');
+};
+
+var appendProgressRow = function(row, transfer){
+    var $tr = $('tr.home-item:last');
+    var $clone = $tr.clone();
+    $tr.after($clone);
+    updateProgressRow($clone, transfer);
 };
 
 var initDownloadProgressTable = function(){

@@ -9,8 +9,8 @@ PROJECT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 STATIC_PATH = PROJECT_PATH + '/static/'
 TEMPLATE_DIRS = (PROJECT_PATH + '/templates/', )
 APP_DATA_DIR = PROJECT_PATH + '/appData/'
-STORAGE_DIR = APP_DATA_DIR + '/storage/'
-TEMP_DIR = APP_DATA_DIR + '/temp/'
+STORAGE_DIR = APP_DATA_DIR + 'storage/'
+TEMP_DIR = APP_DATA_DIR + 'temp/'
 
 
 class LimitedDict(OrderedDict):
