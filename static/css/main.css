@@ -100,4 +100,10 @@ h3 {
   background-color: #0088cc;
   color: white; }
 
+.transfer-download-rate,
+.transfer-added-on,
+.transfer-status,
+.transfer-size {
+  text-align: center; }
+
 /*# sourceMappingURL=main.css.map */

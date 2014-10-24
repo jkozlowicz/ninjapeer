@@ -14,12 +14,13 @@ import os
 
 import hashlib
 
-from datetime import datetime
+import datetime
 
 RPC_PORT = 7090
 CHUNK_SIZE = (1024**2)*10
 DOWNLOAD_RATE_UPDATE_INTERVAL = 1
 DATE_TIME_FORMAT = '%Y-%m-%d %H:%M'
+MAX_ETA = 60*60*24*30
 
 
 def read_chunks(file_obj):
@@ -67,7 +68,7 @@ def convert_bytes(num_of_bytes):
         converted = num_of_bytes
         num_of_bytes /= 1024.0
         counter += 1
-    return converted, units[counter]
+    return round(converted, 2), units[counter]
 
 
 def create_dir_structure():
@@ -102,13 +103,38 @@ def get_files_info(files):
     return info
 
 
-class Transfer(object):
-    statuses = {
-        'DOWNLOADING': 1,
-        'PAUSED': 2,
-        'FINISHED': 3,
-    }
+def format_download_rate(download_rate):
+    num_bytes, units = convert_bytes(download_rate)
+    return '%s %s/s' % (str(num_bytes), units)
 
+
+def days_hours_minutes_seconds(td):
+    return td.days, td.seconds / 3600, (td.seconds / 60) % 60, td.seconds % 60
+
+
+def format_eta(eta):
+    if eta > MAX_ETA:
+        return '-'
+    else:
+        eta_td = datetime.timedelta(seconds=eta)
+        days, hours, minutes, secs = days_hours_minutes_seconds(eta_td)
+        if days > 0:
+            return '%dd %dh' % (days, hours)
+        elif days == 0 and hours > 0:
+            return '%dh %dm' % (hours, minutes)
+        else:
+            return '%dm %ds' % (minutes, secs)
+
+
+def calculate_progress(bytes_received, total_size):
+    try:
+        progress = (bytes_received+0.0) / total_size
+    except ZeroDivisionError:
+        progress = 0.0
+    return int(progress * 100.0)
+
+
+class Transfer(object):
     def __init__(self, matched_file, node_id, host):
         self.file_name = matched_file['name']
         self.size = matched_file['size']
@@ -122,18 +148,19 @@ class Transfer(object):
         self.download_rate = 0.0
         self.start_time = time.time()
         self.time_elapsed = 0.0
-        self.status = Transfer.statuses['DOWNLOADING']
+        self.status = 'DOWNLOADING'
         self.aggregated_hash = hashlib.md5()
-        self.ETA = None
+        self.eta = MAX_ETA + 1
         self.proxy = Proxy('http://' + ':'.join([host, str(RPC_PORT)]))
         self.deferred = None
         self.download_rate_loop = task.LoopingCall(
-            self.update_download_rate
+            self.update_time_rates
         )
         self.wasted = {}
         self.completed_on = None
-        self.added_on = datetime.now().strftime(DATE_TIME_FORMAT)
+        self.added_on = datetime.datetime.now().strftime(DATE_TIME_FORMAT)
         self.path = os.path.join(TEMP_DIR, self.file_name)
+        self.progress = 0.0
 
     def start_download_rate_loop(self):
         self.download_rate_loop.start(
@@ -143,12 +170,16 @@ class Transfer(object):
     def stop_download_rate_loop(self):
         self.download_rate_loop.stop()
 
-    def update_download_rate(self):
-        bytes_received = self.bytes_received
-        start_time = self.start_time
+    def update_time_rates(self):
         self.download_rate = (
-            bytes_received / (time.time() - start_time)
+            self.bytes_received / (time.time() - self.start_time)
         )
+        self.time_elapsed = time.time() - self.start_time
+        self.progress = calculate_progress(self.bytes_received, self.size)
+        if self.download_rate > 0:
+            self.eta = (self.size - self.bytes_received) / self.download_rate
+        else:
+            self.eta = MAX_ETA + 1
 
     def chunk_wasted(self):
         self.wasted[self.curr_chunk] = self.wasted.get(self.curr_chunk, 0) + 1
@@ -166,9 +197,9 @@ class Transfer(object):
         self.proxy = None
         self.download_rate_loop.stop()
         self.download_rate_loop = None
-        self.completed_on = datetime.now().strftime(DATE_TIME_FORMAT)
-        self.status = Transfer.statuses['FINISHED']
-
+        self.status = 'FINISHED'
+        self.update_time_rates()
+        self.completed_on = datetime.datetime.now().strftime(DATE_TIME_FORMAT)
 
 class Downloader(object):
     def __init__(self, node):

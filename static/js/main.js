@@ -88,7 +88,7 @@ var formatFileSize = function(fileSizeTuple){
         var intPart = fileSizeSplit[0];
         var decimalPart = fileSizeSplit[1];
         decimalPart = decimalPart.substring(0, 2);
-        return intPart.concat(".", decimalPart)
+        fileSize = intPart.concat(".", decimalPart);
     }
     return fileSize + ' ' + unit;
 };
@@ -125,21 +125,31 @@ var requestLastQueryResult = function(){
 };
 
 var renderProgress = function(transfers){
-    console.log(transfers);
-//    var $rows = $('#home-items-table tr.home-item');
-    debugger;
     for(var i=0; i<transfers.length; i++){
 
-        var row = $('td.transfer-hash').filter(function() {
+        var tableRow = $('td.transfer-hash').filter(function() {
             return $(this).text() == transfers[i].hash;
         }).closest("tr");
 
-        if(row.length > 0){
-            updateProgressRow(row, transfers[i]);
+        if(tableRow.length > 0){
+            updateProgressRow(tableRow, transfers[i]);
         }else{
-            appendProgressRow(row, transfers[i]);
+            appendProgressRow(tableRow, transfers[i]);
         }
+
+        var detailsHashElement = $('dd.item-details-hash').filter(function() {
+            return $(this).text() == transfers[i].hash;
+        });
+
+        if(detailsHashElement.length > 1){
+            updateDownloadDetails(transfers[i]);
+        }
+
     }
+};
+
+var updateDownloadDetails = function(transfer){
+
 };
 
 var capitalize = function(s){
@@ -147,28 +157,46 @@ var capitalize = function(s){
 };
 
 var updateProgressRow = function(row, transfer){
-
+//progress-bar-warning
     $(row).find('.transfer-name').text(transfer['file_name']);
-    $(row).find('.transfer-size').text(transfer['size']);
+    $(row).find('.transfer-size').text(
+        formatFileSize(transfer['size'])
+    );
     $(row).find('.transfer-status').text(capitalize(transfer['status']));
-    $(row).find('.transfer-download-rate').text(transfer['download_rate']);
-    $(row).find('.transfer-eta').text(transfer['ETA']);
-    $(row).find('.transfer-added-on').text(transfer['size']);
+
+    if(transfer['status'] === 'FINISHED'){
+        $(row).find('.transfer-download-rate').text('-');
+        $(row).find('.transfer-eta').text('-');
+    }else{
+        $(row).find('.transfer-download-rate').text(transfer['download_rate']);
+        $(row).find('.transfer-eta').text(transfer['ETA']);
+    }
+    $(row).find('.transfer-added-on').text(transfer['added_on']);
     $(row).find('.transfer-hash').text(transfer['hash']);
+
+    updateProgressBar(row, transfer['progress']);
 
     var numOfChunks = transfer['num_of_chunks'].toString();
     var currChunk = transfer['curr_chunk'].toString();
-    var chunkSize = transfer['chunk_size'];
+    var chunkSize = formatFileSize(transfer['chunk_size']);
 
     $(row).find('.transfer-chunk-size').text(chunkSize);
     $(row).find('.transfer-save-as').text(transfer['path']);
-    $(row).find('.transfer-wasted').text(transfer['hash']);
+    $(row).find('.transfer-wasted').text(transfer['wasted']);
     $(row).find('.transfer-time-elapsed').text(transfer['time_elapsed']);
     $(row).find('.transfer-pieces').text(
             numOfChunks + ' x ' + chunkSize + '(have ' + currChunk + ')'
     );
-    $(row).find('.transfer-downloaded').text(transfer['bytes_received']);
+    $(row).find('.transfer-downloaded').text(
+        formatFileSize(transfer['bytes_received'])
+    );
     $(row).removeClass('hidden');
+};
+
+var updateProgressBar = function(row, value){
+    var $progressBar = $(row).find('.progress-bar');
+    $progressBar.attr('style', 'width: ' + value.toString() + '%');
+    $progressBar.attr('aria-valuenow', value);
 };
 
 var appendProgressRow = function(row, transfer){
@@ -186,7 +214,9 @@ var initDownloadProgressTable = function(){
         }
     });
 
-    $('#home-items-table tr').click(onClickDownloadRow);
+
+    $('body').on("click", "#home-items-table tr", onClickDownloadRow);
+//    $('#home-items-table tr').click(onClickDownloadRow);
 };
 
 var onClickDownloadRow = function(){
@@ -194,6 +224,7 @@ var onClickDownloadRow = function(){
     var status = $(this).find('td.transfer-status').text().toLowerCase();
     $("#home-items-table tr").removeClass("highlight");
     $(this).addClass("highlight");
+    alert('you clicked ' + $(this).find('td.transfer-name').text());
     displayItemDetails(hash);
     enableButtons(status);
 };

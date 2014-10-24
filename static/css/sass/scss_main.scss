@@ -142,3 +142,10 @@ h3 {
     background-color: $blue-col;
     color: white;
 }
+
+.transfer-download-rate,
+.transfer-added-on,
+.transfer-status,
+.transfer-size {
+  text-align: center;
+}

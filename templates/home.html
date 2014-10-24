@@ -36,7 +36,7 @@
                         <td class="vert-align transfer-name"></td>
                         <td class="vert-align progress-wrapper">
                             <div class="progress">
-                                <div class="progress-bar progress-bar-success progress-bar-striped active transfer-progress-bar"  role="progressbar" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100" style="width: 45%">
+                                <div class="progress-bar progress-bar-success transfer-progress-bar"  role="progressbar" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100" style="width: 45%">
                                 </div>
                             </div>
                         </td>
@@ -57,6 +57,56 @@
                         <td class="vert-align transfer-downloaded hidden"></td>
                     </tr>
 
+                    <tr class="home-item">
+                        <td class="vert-align transfer-name">asdsa</td>
+                        <td class="vert-align progress-wrapper">
+                            <div class="progress">
+                                <div class="progress-bar progress-bar-success transfer-progress-bar"  role="progressbar" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100" style="width: 45%">
+                                </div>
+                            </div>
+                        </td>
+                        <td class="vert-align transfer-size">286.65 MB</td>
+                        <td class="vert-align transfer-status">Downloading</td>
+
+                        <td class="vert-align transfer-download-rate">1.82 MB/s</td>
+                        <td class="vert-align transfer-eta">11m 31s</td>
+                        <td class="vert-align transfer-added-on">2014-10-24 18:54</td>
+
+
+                        <td class="vert-align transfer-hash hidden">aads</td>
+                        <td class="vert-align transfer-chunk-size hidden">asdad</td>
+                        <td class="vert-align transfer-save-as hidden"></td>
+                        <td class="vert-align transfer-wasted hidden"></td>
+                        <td class="vert-align transfer-time-elapsed hidden"></td>
+                        <td class="vert-align transfer-pieces hidden"></td>
+                        <td class="vert-align transfer-downloaded hidden"></td>
+                    </tr>
+
+                    <tr class="home-item">
+                        <td class="vert-align transfer-name">asdsa</td>
+                        <td class="vert-align progress-wrapper">
+                            <div class="progress">
+                                <div class="progress-bar progress-bar-success transfer-progress-bar"  role="progressbar" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100" style="width: 45%">
+                                </div>
+                            </div>
+                        </td>
+                        <td class="vert-align transfer-size">286.65 MB</td>
+                        <td class="vert-align transfer-status">Downloading</td>
+
+                        <td class="vert-align transfer-download-rate">1.82 MB/s</td>
+                        <td class="vert-align transfer-eta">11m 31s</td>
+                        <td class="vert-align transfer-added-on">2014-10-24 18:54</td>
+
+
+                        <td class="vert-align transfer-hash hidden">aads</td>
+                        <td class="vert-align transfer-chunk-size hidden">asdad</td>
+                        <td class="vert-align transfer-save-as hidden"></td>
+                        <td class="vert-align transfer-wasted hidden"></td>
+                        <td class="vert-align transfer-time-elapsed hidden"></td>
+                        <td class="vert-align transfer-pieces hidden"></td>
+                        <td class="vert-align transfer-downloaded hidden"></td>
+                    </tr>
+
                 </tbody>
             </table>
         </div>
@@ -65,10 +115,9 @@
 
             <div id="transfer-details" class="container-fluid">
                 <div id="download-progress-bar-wrapper">
-                    <div></div>
-                    <div class="progress">
-                        <div class="progress-bar progress-bar-success progress-bar-striped active" role="progressbar" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100" style="width: 45%">
-                            <span>100%</span>
+                    <div class="progress hidden">
+                        <div class="progress-bar progress-bar-success" role="progressbar" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100" style="width: 45%">
+                            <!--<span>100%</span>-->
                         </div>
                     </div>
                 </div>
@@ -79,31 +128,31 @@
                         <dl class="dl-horizontal item_details_transfer">
 
                             <dt class="transfer_attr">Downloaded:</dt>
-                            <dd class="transfer_value">XX</dd>
+                            <dd class="transfer_value item-details-downloaded">XX</dd>
 
                             <dt class="transfer_attr">Download rate:</dt>
-                            <dd class="transfer_value">YY</dd>
+                            <dd class="transfer_value item-details-download-rate">YY</dd>
 
                             <dt class="transfer_attr">ETA:</dt>
-                            <dd class="transfer_value">CCCC</dd>
+                            <dd class="transfer_value item-details-eta">CCCC</dd>
 
                             <dt class="transfer_attr">Time elapsed:</dt>
-                            <dd class="transfer_value">CCCC</dd>
+                            <dd class="transfer_value item-details-time-elapsed">CCCC</dd>
                         </dl>
                     </div>
                     <div class="outerClass2 col-xs-6">
                         <dl class="dl-horizontal item_details_transfer">
                             <dt class="transfer_attr">Status:</dt>
-                            <dd class="transfer_value">GDDD</dd>
+                            <dd class="transfer_value item-details-status">GDDD</dd>
 
                             <dt class="transfer_attr">Pieces:</dt>
-                            <dd class="transfer_value">dddd</dd>
+                            <dd class="transfer_value item-details-pieces">dddd</dd>
 
                             <dt class="transfer_attr">Piece size:</dt>
-                            <dd class="transfer_value">dddd</dd>
+                            <dd class="transfer_value item-details-piece-size">dddd</dd>
 
                             <dt class="transfer_attr">Wasted:</dt>
-                            <dd class="transfer_value">bb</dd>
+                            <dd class="transfer_value item-details-wasted">bb</dd>
                         </dl>
                     </div>
                 </div>
@@ -115,19 +164,19 @@
                     <div class="outerClass col-xs-6">
                         <dl class="dl-horizontal item_details_transfer">
                             <dt class="transfer_attr">Name:</dt>
-                            <dd class="transfer_value">bb</dd>
+                            <dd class="transfer_value item-details-name">bb</dd>
 
                             <dt class="transfer_attr">Save as:</dt>
-                            <dd class="transfer_value">bb</dd>
+                            <dd class="transfer_value item-details-save-as">bb</dd>
 
                             <dt class="transfer_attr">Total size:</dt>
-                            <dd class="transfer_value">bb</dd>
+                            <dd class="transfer_value item-details-total-size">bb</dd>
 
                             <dt class="transfer_attr">Hash:</dt>
-                            <dd class="transfer_value">bb</dd>
+                            <dd class="transfer_value item-details-hash">bb</dd>
 
                             <dt class="transfer_attr">Added on:</dt>
-                            <dd class="transfer_value">bb</dd>
+                            <dd class="transfer_value item-details-added-on">bb</dd>
                         </dl>
                     </div>
                 </div>

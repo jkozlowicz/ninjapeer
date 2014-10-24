@@ -2,7 +2,7 @@ __author__ = 'jkozlowicz'
 
 from django.conf import settings
 
-from file_sharing import convert_bytes
+from file_sharing import convert_bytes, format_download_rate, format_eta
 
 from util import TEMPLATE_DIRS, STATIC_PATH
 
@@ -119,7 +119,7 @@ class WebInterfaceFactory(protocol.Factory):
     protocol = WebInterfaceProtocol
 
     def __init__(self, node):
-        self.progress_loop = None
+        self.progress_loop = task.LoopingCall(self.display_download_progress)
         self.client = None
         self.node = node
         self.node.interface = self
@@ -142,9 +142,8 @@ class WebInterfaceFactory(protocol.Factory):
         self.client.transport.write(msg)
 
     def start_displaying_download_progress(self):
-        if self.progress_loop is None:
-            self.progress_loop = task.LoopingCall(self.display_download_progress)
-        self.progress_loop.start(PROGRESS_DISPLAY_INTERVAL, now=True)
+        if not self.progress_loop.running:
+            self.progress_loop.start(PROGRESS_DISPLAY_INTERVAL, now=True)
 
     def stop_displaying_download_progress(self):
         self.progress_loop.stop()
@@ -162,15 +161,16 @@ class WebInterfaceFactory(protocol.Factory):
                     'curr_chunk': transfer.curr_chunk,
                     'num_of_chunks': transfer.num_of_chunks,
                     'bytes_received': convert_bytes(transfer.bytes_received),
-                    'download_rate': transfer.download_rate,
+                    'download_rate': format_download_rate(transfer.download_rate),
                     'status': transfer.status,
-                    'ETA': transfer.ETA,
+                    'ETA': format_eta(transfer.eta),
                     'wasted': sum(transfer.wasted.values()),
                     'added_on': transfer.added_on,
                     'chunk_size': convert_bytes(transfer.chunk_size),
                     'hash': transfer.hash,
                     'path': transfer.path,
-                    'time_elapsed': transfer.time_elapsed,
+                    'time_elapsed': '.2f' % transfer.time_elapsed,
+                    'progress': transfer.progress
                 }
             )
         self.client.transport.write(json.dumps(msg))
