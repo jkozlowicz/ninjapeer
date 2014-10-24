@@ -104,7 +104,7 @@ class MessagingProtocol(protocol.DatagramProtocol):
         if matching_files:
             print 'Sending MATCH'
             files_info = file_sharing.get_files_info(matching_files)
-            print 'Sending query'
+            print 'Sending query further'
             msg = json.dumps({
                 'MSG': 'MATCH',
                 'INFO': files_info,
@@ -139,10 +139,7 @@ class MessagingProtocol(protocol.DatagramProtocol):
             if datagram['QUERY_ID'] in self.node.queries:
                 next_hop = self.node.queries[datagram['QUERY_ID']]
                 serialized_datagram = json.dumps(datagram)
-                self.transport.write(
-                    serialized_datagram,
-                    (next_hop, MSG_PORT)
-                )
+                self.transport.write(serialized_datagram, (next_hop, MSG_PORT))
 
     def send_query(self, query):
         print 'Sending query'

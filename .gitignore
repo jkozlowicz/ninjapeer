@@ -3,3 +3,7 @@ static/css/.sass-cache
 *.pyc
 appData
 misc
+testin.py
+item_list.html
+item_details.html
+table.html

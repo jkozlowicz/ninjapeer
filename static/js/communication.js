@@ -27,5 +27,9 @@ function onMessage(e) {
 
         renderMatchResult(msg.content);
 
+    }else if(msg.event == 'PROGRESS'){
+
+        renderProgress(msg.content);
+
     }
 }

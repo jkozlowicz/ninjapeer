@@ -1,13 +1,21 @@
+html, body {
+  height: 100%; }
+
 .center-content {
-  width: 960px;
-  margin: 0 auto; }
+  width: 980px;
+  margin: 0 auto;
+  height: 100%; }
+
+#home-page-container {
+  height: 100%; }
 
 #search-box-container,
 #search-btn-container {
   display: inline; }
 
 #content-container {
-  padding-top: 40px; }
+  padding-top: 5px;
+  height: 100%; }
 
 .img-centered {
   display: block;
@@ -31,9 +39,65 @@
   width: 40%; }
 
 #home-items-table th:first-of-type, td:first-of-type {
-  width: 50%; }
+  width: 40%; }
+
+.home-item:hover {
+  cursor: pointer; }
 
 .glyphicon-big {
   font-size: 2.0em; }
+
+#item_details_iframe {
+  position: fixed;
+  bottom: 0; }
+
+#item_list_iframe {
+  width: 980px;
+  border: 1px #dddddd solid;
+  height: 250px; }
+
+#item_details_container {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  max-width: 980px; }
+
+.transfer_attr {
+  text-align: left; }
+
+#download-progress-bar-wrapper {
+  padding-top: 15px; }
+
+h3 {
+  text-align: center; }
+
+#home-items-table-header {
+  background-color: #eee; }
+
+#home-items-table-header th {
+  color: #0088cc; }
+
+.navbar {
+  margin-bottom: 10px !important; }
+
+#actions-container {
+  margin-bottom: 10px; }
+
+#download-progress-table-wrapper {
+  overflow: auto;
+  max-height: 250px; }
+
+.disabled {
+  color: red; }
+
+.enabled {
+  color: #0088cc; }
+
+.action-btn {
+  min-width: 80px; }
+
+.highlight {
+  background-color: #0088cc;
+  color: white; }
 
 /*# sourceMappingURL=main.css.map */

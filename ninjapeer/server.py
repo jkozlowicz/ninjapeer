@@ -8,20 +8,36 @@ from twisted.web.static import File
 
 from txws import WebSocketFactory
 
-from web_interface import Homepage, Search, WebInterfaceFactory
+from web_interface import (
+    Homepage, Search, WebInterfaceFactory, ItemDetails, ItemList
+)
 from web_interface import STATIC_PATH, WEBSOCK_PORT
 
 from node import NinjaNode
 
 from messaging import MessagingProtocol, MSG_PORT
 
+
+class MySite(Site):
+    def __init__(self, resource, *args, **kwargs):
+        Site.__init__(self, resource, *args, **kwargs)
+
+    def render(self, request):
+        self.resource.request = request
+        Site.render(request)
+
+
 if __name__ == "__main__":
     root = Resource()
     homepage = Homepage()
     search_page = Search()
+    item_details = ItemDetails()
+    item_list = ItemList()
     root.putChild("static", File(STATIC_PATH))
     root.putChild("home", homepage)
     root.putChild("search", search_page)
+    root.putChild("item_details", item_details)
+    root.putChild("item_list", item_list)
     website = Site(root)
     ninjanode = NinjaNode()
     file_sharing_service = FileSharingService(node=ninjanode)

@@ -1,6 +1,21 @@
+
+$page_width: 980px;
+$home-items-table-header-bg-color: #eee;
+$blue-col: #0088cc;
+$icons-col: #428BCA;
+
+html, body {
+  height: 100%;
+}
+
 .center-content {
-  width: 960px;
+  width: $page_width;
   margin: 0 auto;
+  height: 100%;
+}
+
+#home-page-container {
+  height: 100%;
 }
 
 #search-box-container,
@@ -8,8 +23,9 @@
   display: inline;
 }
 
-#content-container {
-  padding-top: 40px;
+#content-container{
+  padding-top: 5px;
+  height: 100%;
 }
 
 .img-centered {
@@ -43,9 +59,86 @@
 }
 
 #home-items-table th:first-of-type, td:first-of-type{
-  width: 50%;
+  width: 40%;
+}
+
+.home-item:hover {
+    cursor: pointer;
 }
 
 .glyphicon-big{
   font-size: 2.0em;
+}
+
+#item_details_iframe{
+  position: fixed;
+  bottom: 0;
+}
+
+#item_list_iframe{
+  width: $page_width;
+  border: 1px #dddddd solid;
+  height: 250px;
+//-moz-box-shadow: 0px 0px 7px 2px #bdbdbd;
+//-webkit-box-shadow: 0px 0px 7px 2px #bdbdbd;
+//box-shadow: 0px 0px 7px 2px #bdbdbd;
+
+}
+
+#item_details_container {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  max-width: $page_width;
+//  border-top: 1px #dddddd solid;
+}
+
+.transfer_attr {
+  text-align: left;
+}
+
+#download-progress-bar-wrapper {
+  padding-top: 15px;
+}
+
+h3 {
+  text-align: center;
+}
+
+#home-items-table-header {
+  background-color: $home-items-table-header-bg-color;
+}
+
+#home-items-table-header th{
+  color: $blue-col;
+}
+
+.navbar {
+  margin-bottom: 10px !important;
+}
+
+#actions-container {
+  margin-bottom: 10px;
+}
+
+#download-progress-table-wrapper {
+  overflow: auto;
+  max-height: 250px;
+}
+
+.disabled {
+  color: red;
+}
+
+.enabled {
+  color: $blue-col
+}
+
+.action-btn {
+  min-width: 80px;
+}
+
+.highlight {
+    background-color: $blue-col;
+    color: white;
 }

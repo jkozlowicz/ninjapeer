@@ -2,21 +2,24 @@ __author__ = 'jkozlowicz'
 from util import STORAGE_DIR, APP_DATA_DIR, TEMP_DIR
 
 from twisted.web import xmlrpc
-from twisted.web.xmlrpc import Proxy
+from twisted.web.xmlrpc import Proxy, withRequest
 
 from twisted.internet import task
 
-import time
+from twisted.internet.defer import succeed
 
-import xmlrpclib
+import time
 
 import os
 
 import hashlib
 
+from datetime import datetime
+
 RPC_PORT = 7090
 CHUNK_SIZE = (1024**2)*10
 DOWNLOAD_RATE_UPDATE_INTERVAL = 1
+DATE_TIME_FORMAT = '%Y-%m-%d %H:%M'
 
 
 def read_chunks(file_obj):
@@ -102,7 +105,7 @@ def get_files_info(files):
 class Transfer(object):
     statuses = {
         'DOWNLOADING': 1,
-        'STOPPED': 2,
+        'PAUSED': 2,
         'FINISHED': 3,
     }
 
@@ -111,11 +114,14 @@ class Transfer(object):
         self.size = matched_file['size']
         self.pieces = matched_file['pieces']
         self.hash = matched_file['hash']
+        self.piece_size = CHUNK_SIZE
         self.owner = node_id
         self.curr_chunk = 0
+        self.num_of_chunks = len(self.pieces)
         self.bytes_received = 0
         self.download_rate = 0.0
         self.start_time = time.time()
+        self.time_elapsed = 0.0
         self.status = Transfer.statuses['DOWNLOADING']
         self.aggregated_hash = hashlib.md5()
         self.ETA = None
@@ -125,6 +131,9 @@ class Transfer(object):
             self.update_download_rate
         )
         self.wasted = {}
+        self.completed_on = None
+        self.added_on = datetime.now().strftime(DATE_TIME_FORMAT)
+        self.path = os.path.join(TEMP_DIR, self.file_name)
 
     def start_download_rate_loop(self):
         self.download_rate_loop.start(
@@ -146,9 +155,8 @@ class Transfer(object):
 
     def save_chunk(self, chunk):
         self.curr_chunk += 1
-        f_path = os.path.join(TEMP_DIR, self.file_name)
         mode = 'w' if self.curr_chunk == 0 else 'a'
-        with open(f_path, mode) as f:
+        with open(self.path, mode) as f:
             f.write(chunk)
         self.bytes_received += len(chunk)
         self.aggregated_hash.update(chunk)
@@ -158,6 +166,7 @@ class Transfer(object):
         self.proxy = None
         self.download_rate_loop.stop()
         self.download_rate_loop = None
+        self.completed_on = datetime.now().strftime(DATE_TIME_FORMAT)
         self.status = Transfer.statuses['FINISHED']
 
 
@@ -240,18 +249,20 @@ def chunk_to_pass_arrived(result):
 
 class FileSharingService(xmlrpc.XMLRPC):
     def __init__(self, *args, **kwargs):
+        self.requests = []
         self.node = kwargs.pop('node')
         self.node.file_sharing_service = self
         xmlrpc.XMLRPC.__init__(self, *args, **kwargs)
 
-    def xmlrpc_get_file_chunk(self, owner_id, file_name, chunk_num):
+    @withRequest
+    def xmlrpc_get_file_chunk(self, request, owner_id, file_name, chunk_num):
         print 'chunk %s of %s requested' % (chunk_num, file_name)
         if owner_id == self.node.id:
             f_path = os.path.join(STORAGE_DIR, file_name)
             if os.path.isfile(f_path):
                 chunk = get_chunk(f_path, chunk_num)
                 print 'serving chunk %s of %s' % (chunk_num, file_name)
-                return xmlrpc.Binary(chunk)
+                return succeed(xmlrpc.Binary(chunk))
             else:
                 raise xmlrpc.Fault(100, "File does not exist.")
         else:

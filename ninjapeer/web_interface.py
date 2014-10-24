@@ -7,7 +7,7 @@ from file_sharing import convert_bytes
 from util import TEMPLATE_DIRS, STATIC_PATH
 
 from twisted.web.resource import Resource
-from twisted.internet import protocol
+from twisted.internet import protocol, task
 
 import django.template
 import django.template.loader
@@ -29,6 +29,7 @@ settings.configure(
 )
 
 WEBSOCK_PORT = 8888
+PROGRESS_DISPLAY_INTERVAL = 1
 
 
 def add_global_ctx(ctx):
@@ -74,6 +75,22 @@ class Homepage(Resource):
         return str(content)
 
 
+class ItemList(Resource):
+    isLeaf = True
+
+    def render_GET(self, request):
+        content = render('item_list.html')
+        return str(content)
+
+
+class ItemDetails(Resource):
+    isLeaf = True
+
+    def render_GET(self, request):
+        content = render('item_details.html')
+        return str(content)
+
+
 class WebInterfaceProtocol(protocol.Protocol):
     def __init__(self, factory):
         self.factory = factory
@@ -102,6 +119,7 @@ class WebInterfaceFactory(protocol.Factory):
     protocol = WebInterfaceProtocol
 
     def __init__(self, node):
+        self.progress_loop = None
         self.client = None
         self.node = node
         self.node.interface = self
@@ -123,5 +141,36 @@ class WebInterfaceFactory(protocol.Factory):
         )
         self.client.transport.write(msg)
 
+    def start_displaying_download_progress(self):
+        if self.progress_loop is None:
+            self.progress_loop = task.LoopingCall(self.display_connections)
+        self.progress_loop.start(PROGRESS_DISPLAY_INTERVAL, now=True)
+
+    def stop_displaying_download_progress(self):
+        self.progress_loop.stop()
+
     def display_download_progress(self):
-        pass
+        msg = {
+            'event': 'PROGRESS',
+            'content': []
+        }
+        for transfer in self.node.transfers:
+            msg['content'].append(
+                {
+                    'file_name': transfer.file_name,
+                    'size': convert_bytes(transfer.size),
+                    'curr_chunk': transfer.curr_chunk,
+                    'num_of_chunks': transfer.num_of_chunks,
+                    'bytes_received': convert_bytes(transfer.bytes_received),
+                    'download_rate': transfer.download_rate,
+                    'status': transfer.status,
+                    'ETA': transfer.ETA,
+                    'wasted': sum(transfer.wasted.values()),
+                    'added_on': transfer.added_on,
+                    'piece_size': transfer.piece_size,
+                    'save_as': '',
+                    'hash': transfer.hash,
+                    'path': transfer.path
+                }
+            )
+        self.client.transport.write(json.dumps(msg))
