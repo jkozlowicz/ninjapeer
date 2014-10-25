@@ -1,4 +1,6 @@
 __author__ = 'jkozlowicz'
+import copy
+
 from util import STORAGE_DIR, APP_DATA_DIR, TEMP_DIR
 
 from twisted.web import xmlrpc
@@ -139,13 +141,13 @@ def calculate_progress(bytes_received, total_size):
 
 
 class Transfer(object):
-    def __init__(self, matched_file, node_id, host):
-        self.file_name = matched_file['name']
-        self.size = matched_file['size']
-        self.pieces = matched_file['pieces']
-        self.hash = matched_file['hash']
+    def __init__(self, file_info, owners):
+        self.file_name = file_info['name']
+        self.size = file_info['size']
+        self.pieces = file_info['pieces']
+        self.hash = file_info['hash']
+        self.file_info = file_info
         self.chunk_size = CHUNK_SIZE
-        self.owner = node_id
         self.curr_chunk = 0
         self.num_of_chunks = len(self.pieces)
         self.bytes_received = 0
@@ -155,18 +157,23 @@ class Transfer(object):
         self.paused_time = 0.0
         self.time_elapsed = 0.0
         self.status = 'DOWNLOADING'
-        self.aggregated_hash = hashlib.md5()
         self.eta = MAX_ETA + 1
-        self.proxy = Proxy('http://' + ':'.join([host, str(RPC_PORT)]))
-        self.deferred = None
-        self.download_rate_loop = task.LoopingCall(
-            self.update_time_rates
-        )
         self.wasted = {}
         self.completed_on = None
         self.added_on = datetime.datetime.now().strftime(DATE_TIME_FORMAT)
         self.path = os.path.join(TEMP_DIR, self.file_name)
         self.progress = 0.0
+
+        self.owners = owners
+        self.owners_to_use = copy.deepcopy(owners)
+        self.owner_being_used = None
+
+        self.intermediary_being_used = None
+
+        self.deferred = None
+        self.proxy = None
+        self.download_rate_loop = task.LoopingCall(self.update_timers)
+        # self.aggregated_hash = hashlib.md5()
 
     def start_download_rate_loop(self, now=False):
         self.download_rate_loop.start(
@@ -176,7 +183,7 @@ class Transfer(object):
     def stop_download_rate_loop(self):
         self.download_rate_loop.stop()
 
-    def update_time_rates(self):
+    def update_timers(self):
         self.download_rate = (
             self.bytes_received / (time.time() - self.start_time)
         )
@@ -196,7 +203,7 @@ class Transfer(object):
         with open(self.path, mode) as f:
             f.write(chunk)
         self.bytes_received += len(chunk)
-        self.aggregated_hash.update(chunk)
+        # self.aggregated_hash.update(chunk)
 
     def finalize(self):
         self.deferred = None
@@ -204,7 +211,7 @@ class Transfer(object):
         self.download_rate_loop.stop()
         self.download_rate_loop = None
         self.status = 'FINISHED'
-        self.update_time_rates()
+        self.update_timers()
         new_path = os.path.join(STORAGE_DIR, self.file_name)
         os.rename(self.path, new_path)
         self.path = new_path
@@ -215,39 +222,67 @@ class Downloader(object):
     def __init__(self, node):
         self.node = node
         self.node.downloader = self
+        if self.node.starting:
+            for file_hash, transfer in self.node.transfers.items():
+                if transfer.status == 'DOWNLOADING':
+                    self.download(transfer.file_info, transfer.owners)
+            self.node.starting = False
 
     def init_download(self, file_hash):
-        # from pprint import pprint
-        # pprint(self.node.last_query_result)
-        # return
+        owners = []
+        file_info = None
         for result in self.node.last_query_result:
             for matched_file in result['INFO']:
                 if matched_file['hash'] == file_hash:
-                    self.download(matched_file, result['NODE_ID'])
-                    break
+                    owners.append(result['NODE_ID'])
+                    if file_info is None:
+                        file_info = matched_file
+        if file_info is not None and len(owners) > 0:
+            self.download(file_info, owners)
 
-    def download(self, matched_file, node_id):
-        file_hash = matched_file['hash']
-        if file_hash in self.node.transfers:
-            #TODO: if state loaded from file, transfer needs to be continued
+    def download(self, file_info, owners):
+        file_hash = file_info['hash']
+        if file_hash in self.node.transfers and not self.node.starting:
             return
-        intermediaries = self.node.routing_table.get(node_id, None)
-        if intermediaries is None:
-            #TODO: notify the user that there is no route to the owner
-            #TODO: of the requested file
-            pass
+        elif file_hash in self.node.transfers and self.node.starting:
+            transfer = self.node.transfers[file_hash]
+            transfer.download_rate_loop = task.LoopingCall(
+                transfer.update_timers
+            )
         else:
-            host = intermediaries[0]
-            transfer = Transfer(matched_file, node_id, host)
-            transfer.start_download_rate_loop()
-            self.request_next_chunk(transfer)
+            transfer = Transfer(file_info, owners)
             self.node.transfers[file_hash] = transfer
-            self.node.interface.start_displaying_download_progress()
+        self.request_next_chunk(transfer)
+        transfer.start_download_rate_loop()
+        self.node.interface.start_displaying_download_progress()
 
     def request_next_chunk(self, transfer):
+        if transfer.proxy is None:
+            try:
+                if transfer.owner_being_used is None:
+                    transfer.owner_being_used = transfer.owners_to_use.pop()
+                try:
+                    intermediaries = self.node.routing_table.get(
+                        transfer.owner_being_used, []
+                    )[:]
+                    transfer.intermediary_being_used = intermediaries.pop()
+                    transfer.proxy = Proxy(
+                        'http://' + ':'.join(
+                            [transfer.intermediary_being_used, str(RPC_PORT)]
+                        )
+                    )
+                except IndexError:
+                    transfer.intermediary_being_used = None
+                self.request_next_chunk(transfer)
+                    #Tried to download the file from the owner using all
+                    #known intermediaries known for that NODE_ID
+            except IndexError:
+                #Tried to download the file from all owners of this file
+                return
+
         transfer.deferred = transfer.proxy.callRemote(
             'get_file_chunk',
-            transfer.owner,
+            transfer.owner_being_used,
             transfer.file_name,
             transfer.curr_chunk
         )
@@ -257,6 +292,11 @@ class Downloader(object):
             callbackKeywords={'transfer': transfer},
             errbackKeywords={'transfer': transfer},
         )
+
+    def chunk_failed(self, failure, transfer):
+        print 'chunk failed'
+        print failure
+        pass
 
     @staticmethod
     def if_checksum_matches(checksum, chunk_data):
@@ -280,11 +320,6 @@ class Downloader(object):
         else:
             print 'File %s assembled successfully' % transfer.file_name
             transfer.finalize()
-
-    def chunk_failed(self, failure):
-        print 'chunk failed'
-        print failure
-        pass
 
     def pause_transfer(self, file_hash):
         transfer = self.node.transfers[file_hash]

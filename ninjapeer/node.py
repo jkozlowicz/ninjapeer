@@ -1,10 +1,13 @@
 __author__ = 'jkozlowicz'
+import copy
 
 import file_sharing
 
 import uuid
 
-from util import get_machine_ip, LimitedDict
+import pickle
+
+from util import get_machine_ip, LimitedDict, STATE_FILE_PATH
 
 MAX_INTERMEDIARIES = 10
 MSG_LIMIT = 1000
@@ -26,11 +29,13 @@ class NinjaNode(object):
         self.message_bag = None
         self.transfers = {}
         self.queries = {}
-
+        self.starting = True
         self.startup()
 
     def startup(self):
-        self.id = uuid.uuid4().hex
+        self.load_state()
+        if self.id is None:
+            self.id = uuid.uuid4().hex
         self.host = get_machine_ip()
         self.message_bag = LimitedDict(limit=MSG_LIMIT)
         self.queries = LimitedDict(limit=QUERY_LIMIT)
@@ -46,3 +51,34 @@ class NinjaNode(object):
                 if len(intermediaries) > MAX_INTERMEDIARIES:
                     intermediaries = intermediaries[1:]
                 self.routing_table[addressee] = intermediaries
+
+    def save_state(self):
+        transfers = []
+        for transfer in self.transfers.values():
+            if transfer.deferred is not None:
+                transfer.deferred.cancel()
+            transfer.deferred = None
+            transfer.proxy = None
+            transfer.aggregated_hash = None
+            transfer.download_rate_loop = None
+            transfer.owners_to_use = copy.deepcopy(transfer.owners)
+            transfers.append(transfer)
+        node_state = {
+            'peers': self.peers,
+            'routing_table': self.routing_table,
+            'id': self.id,
+            'transfers': transfers
+        }
+        with open(STATE_FILE_PATH, 'wb') as f:
+            pickle.dump(node_state, f, pickle.HIGHEST_PROTOCOL)
+
+    def load_state(self):
+        try:
+            f = open(STATE_FILE_PATH, 'rb')
+            node_state = pickle.load(f)
+            self.peers = node_state['peers']
+            self.routing_table = node_state['routing_table']
+            self.id = node_state['id']
+            self.transfers = node_state['transfers']
+        except EOFError:
+            pass

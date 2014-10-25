@@ -85,8 +85,8 @@ class MessagingProtocol(protocol.DatagramProtocol):
         print 'Starting PING service'
         self.ping_loop.start(PING_INTERVAL, now=False)
 
-    def send_ping(self):
-        addr = self.address_service.get_next_addr()
+    def send_ping(self, host=None):
+        addr = host or self.address_service.get_next_addr()
         if addr is None:
             self.ping_loop.stop()
         else:

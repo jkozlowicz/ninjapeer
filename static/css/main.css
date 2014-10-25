@@ -26,7 +26,8 @@ html, body {
   padding-top: 50px; }
 
 #query-result-table-header th,
-#home-items-table-header th {
+#home-items-table-header th,
+#query-result-table td {
   text-align: center; }
 
 .table tbody > tr > td.vert-align {
