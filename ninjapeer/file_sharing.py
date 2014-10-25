@@ -300,23 +300,28 @@ class Downloader(object):
         )
 
     def chunk_failed(self, failure, transfer):
-        print 'chunk failed'
+        reason = 'other'
         if isinstance(failure.value, xmlrpc.Fault):
             if failure.value.faultCode == FILE_MISSING_CODE:
                 transfer.owner_being_used = None
-                self.request_next_chunk(transfer)
+                reason = 'owner does not have the file'
             elif failure.value.faultCode == NO_ROUTE_CODE:
                 self.node.routing_table[transfer.owner_being_used].remove(
                     transfer.intermediary_being_used
                 )
-                self.request_next_chunk(transfer)
+                reason = ('host %s does not know who to route the msg'
+                          % transfer.intermediary_being_used)
         elif isinstance(failure.value, ConnectionRefusedError):
             self.node.routing_table[transfer.owner_being_used].remove(
                 transfer.intermediary_being_used
             )
+            reason = ('cannot connect to host: %s'
+                      % transfer.intermediary_being_used)
             if len(self.node.routing_table[transfer.owner_being_used]) == 0:
                 del self.node.routing_table[transfer.owner_being_used]
             del self.node.peers[transfer.intermediary_being_used]
+        print 'chunk failed, reason: %s' % reason
+        self.request_next_chunk(transfer)
         # except xmlrpclib.ProtocolError as err:
 
     @staticmethod
