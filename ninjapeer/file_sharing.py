@@ -10,6 +10,8 @@ from twisted.internet import task
 
 from twisted.internet.defer import succeed
 
+from twisted.internet.error import ConnectionRefusedError
+
 import time
 
 import os
@@ -23,6 +25,8 @@ CHUNK_SIZE = (1024**2)*10
 DOWNLOAD_RATE_UPDATE_INTERVAL = 1
 DATE_TIME_FORMAT = '%Y-%m-%d %H:%M'
 MAX_ETA = 60*60*24*30
+FILE_MISSING_CODE = 100
+NO_ROUTE_CODE = 101
 
 
 def read_chunks(file_obj):
@@ -243,6 +247,7 @@ class Downloader(object):
     def download(self, file_info, owners):
         file_hash = file_info['hash']
         if file_hash in self.node.transfers and not self.node.starting:
+            print 'File already downloaded'
             return
         elif file_hash in self.node.transfers and self.node.starting:
             transfer = self.node.transfers[file_hash]
@@ -254,7 +259,7 @@ class Downloader(object):
             self.node.transfers[file_hash] = transfer
         self.request_next_chunk(transfer)
         transfer.start_download_rate_loop()
-        self.node.interface.start_displaying_download_progress()
+        # self.node.interface.start_displaying_download_progress()
 
     def request_next_chunk(self, transfer):
         if transfer.proxy is None:
@@ -273,7 +278,8 @@ class Downloader(object):
                     )
                 except IndexError:
                     transfer.intermediary_being_used = None
-                self.request_next_chunk(transfer)
+                    self.request_next_chunk(transfer)
+                    return
                     #Tried to download the file from the owner using all
                     #known intermediaries known for that NODE_ID
             except IndexError:
@@ -295,8 +301,23 @@ class Downloader(object):
 
     def chunk_failed(self, failure, transfer):
         print 'chunk failed'
-        print failure
-        pass
+        if isinstance(failure.value, xmlrpc.Fault):
+            if failure.value.faultCode == FILE_MISSING_CODE:
+                transfer.owner_being_used = None
+                self.request_next_chunk(transfer)
+            elif failure.value.faultCode == NO_ROUTE_CODE:
+                self.node.routing_table[transfer.owner_being_used].remove(
+                    transfer.intermediary_being_used
+                )
+                self.request_next_chunk(transfer)
+        elif isinstance(failure.value, ConnectionRefusedError):
+            self.node.routing_table[transfer.owner_being_used].remove(
+                transfer.intermediary_being_used
+            )
+            if len(self.node.routing_table[transfer.owner_being_used]) == 0:
+                del self.node.routing_table[transfer.owner_being_used]
+            del self.node.peers[transfer.intermediary_being_used]
+        # except xmlrpclib.ProtocolError as err:
 
     @staticmethod
     def if_checksum_matches(checksum, chunk_data):
@@ -367,12 +388,13 @@ class FileSharingService(xmlrpc.XMLRPC):
                 print 'serving chunk %s of %s' % (chunk_num, file_name)
                 return succeed(xmlrpc.Binary(chunk))
             else:
-                raise xmlrpc.Fault(100, "File does not exist.")
+                raise xmlrpc.Fault(
+                    FILE_MISSING_CODE, "File does not exist."
+                )
         else:
             intermediaries = self.node.routing_table.get(owner_id, None)
             if intermediaries:
                 for host in intermediaries:
-                    # try:
                     proxy = Proxy(
                         'http://' + ':'.join([host, str(RPC_PORT)])
                     )
@@ -384,13 +406,6 @@ class FileSharingService(xmlrpc.XMLRPC):
                     )
                     d.addCallback(lambda res: res)
                     return d
-                    #TODO: add errback
-                    # except xmlrpclib.Fault as fault:
-                    #     if fault.faultCode == 100:
-                    #         raise
-                    #     elif fault.faultCode == 101:
-                    #         self.node.routing_table[owner_id].remove(host)
-                    # except xmlrpclib.ProtocolError as err:
-                    #     self.node.routing_table[owner_id].remove(host)
-                    #     del self.node.peers[host]
-            raise xmlrpc.Fault(101, "No route found for %s." % owner_id)
+            raise xmlrpc.Fault(
+                NO_ROUTE_CODE, "No route found for %s." % owner_id
+            )
