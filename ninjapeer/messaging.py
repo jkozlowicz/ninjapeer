@@ -167,4 +167,4 @@ class MessagingProtocol(protocol.DatagramProtocol):
 
     def download_requested(self, file_info):
         print 'Download requested'
-        self.node.downloader.init_download(file_info['fileName'])
+        self.node.downloader.init_download(file_info['hash'])

@@ -71,7 +71,7 @@ var renderMatchResult = function(lastMatchResult){
         var row = '<tr class="result-item">' +
         '<td class="vert-align result-name">' + result.name + '</td>' +
         '<td class="vert-align result-hash">' + result.hash + '</td>' +
-        '<td class="vert-align result-date">' + result.date + '</td>' +
+//        '<td class="vert-align result-date">' + result.date + '</td>' +
         '<td class="vert-align result-size">' + fileSize + '</td>' +
         '<td class="vert-align"><a href="#"><span class="glyphicon glyphicon-download glyphicon-big"></span></a></td>' +
         '</tr>';
@@ -98,10 +98,9 @@ var formatFileSize = function(fileSizeTuple){
     return fileSize + ' ' + unit;
 };
 
-//TODO: poprawić to, bo jest zahardcodeowane
 var ifAlreadyInResult = function(hash){
     return $("#query-result-table td").filter(function() {
-        return $(this).text() == "8358ac84b43444c8f893d07681bbbf6d";
+        return $(this).text() == hash;
     }).length;
 };
 

@@ -205,6 +205,9 @@ class Transfer(object):
         self.download_rate_loop = None
         self.status = 'FINISHED'
         self.update_time_rates()
+        new_path = os.path.join(STORAGE_DIR, self.file_name)
+        os.rename(self.path, new_path)
+        self.path = new_path
         self.completed_on = datetime.datetime.now().strftime(DATE_TIME_FORMAT)
 
 
@@ -213,10 +216,13 @@ class Downloader(object):
         self.node = node
         self.node.downloader = self
 
-    def init_download(self, file_name):
+    def init_download(self, file_hash):
+        # from pprint import pprint
+        # pprint(self.node.last_query_result)
+        # return
         for result in self.node.last_query_result:
             for matched_file in result['INFO']:
-                if matched_file['name'] == file_name:
+                if matched_file['hash'] == file_hash:
                     self.download(matched_file, result['NODE_ID'])
                     break
 
@@ -297,7 +303,11 @@ class Downloader(object):
         transfer.start_download_rate_loop(now=True)
 
     def remove_transfer(self, file_hash):
-        pass
+        transfer = self.node.transfers[file_hash]
+        transfer.deferred.cancel()
+        transfer.stop_download_rate_loop()
+        os.remove(transfer.path)
+        self.node.transfers[file_hash] = None
 
 
 def chunk_to_pass_arrived(result):
