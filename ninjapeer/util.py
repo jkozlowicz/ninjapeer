@@ -11,7 +11,6 @@ TEMPLATE_DIRS = (PROJECT_PATH + '/templates/', )
 APP_DATA_DIR = PROJECT_PATH + '/appData/'
 STORAGE_DIR = APP_DATA_DIR + 'storage/'
 TEMP_DIR = APP_DATA_DIR + 'temp/'
-ROUTING_FILE_PATH = APP_DATA_DIR + 'routing'
 STATE_FILE_PATH = APP_DATA_DIR + 'state'
 
 

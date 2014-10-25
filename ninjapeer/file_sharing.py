@@ -1,7 +1,7 @@
 __author__ = 'jkozlowicz'
 import copy
 
-from util import STORAGE_DIR, APP_DATA_DIR, TEMP_DIR
+from util import STORAGE_DIR, APP_DATA_DIR, TEMP_DIR, STATE_FILE_PATH
 
 from twisted.web import xmlrpc
 from twisted.web.xmlrpc import Proxy, withRequest

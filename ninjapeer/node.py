@@ -80,5 +80,5 @@ class NinjaNode(object):
             self.routing_table = node_state['routing_table']
             self.id = node_state['id']
             self.transfers = node_state['transfers']
-        except EOFError:
+        except (IOError, EOFError):
             pass
