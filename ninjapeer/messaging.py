@@ -126,7 +126,7 @@ class MessagingProtocol(protocol.DatagramProtocol):
 
             self.update_node_files()
 
-            files_info = file_sharing.get_files_info(
+            files_info = file_sharing.get_matching_files_info(
                 matching_files, self.node.files
             )
             print 'Sending query further'

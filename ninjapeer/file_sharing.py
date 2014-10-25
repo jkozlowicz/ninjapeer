@@ -111,17 +111,16 @@ def get_matching_files(query):
     return results
 
 
-# def get_files_info(files, node_files):
-#     info = []
-#     for file_name in files:
-#         if file_name in node_files:
-#             f_info = node_files[file_name]
-#         else:
-#             f_path = os.path.join(STORAGE_DIR, file_name)
-#             f_info = get_file_info(f_path, file_name)
-#         info.append(f_info)
-#     return info
-def get_files_info(files, node_files):
+def get_files_info(files):
+    info = []
+    for file_name in files:
+        f_path = os.path.join(STORAGE_DIR, file_name)
+        f_info = get_file_info(f_path, file_name)
+        info.append(f_info)
+    return info
+
+
+def get_matching_files_info(files, node_files):
     return [node_files[f_name] for f_name in files if f_name in node_files]
 
 
