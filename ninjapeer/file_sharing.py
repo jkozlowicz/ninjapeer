@@ -90,7 +90,8 @@ def create_dir_structure():
 
 def get_stale_files(node_files):
     curr_files = os.listdir(STORAGE_DIR)
-    return [file_name for file_name in curr_files if not file_name in node_files]
+    return [file_name for file_name in node_files.keys()
+            if file_name not in curr_files]
 
 
 def get_missing_files(node_files):
