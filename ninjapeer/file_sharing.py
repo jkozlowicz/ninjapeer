@@ -88,8 +88,19 @@ def create_dir_structure():
         os.makedirs(TEMP_DIR)
 
 
-def get_matching_files(query, files=None):
-    files = files or os.listdir(STORAGE_DIR)
+def get_stale_files(node_files):
+    curr_files = os.listdir(STORAGE_DIR)
+    return [file_name for file_name in curr_files if file_name in node_files]
+
+
+def get_missing_files(node_files):
+    files = os.listdir(STORAGE_DIR)
+    node_files_names = node_files.keys()
+    return set(files) - set(node_files_names)
+
+
+def get_matching_files(query):
+    files = os.listdir(STORAGE_DIR)
     terms = query.split()
     results = []
     for f in files:
@@ -100,13 +111,18 @@ def get_matching_files(query, files=None):
     return results
 
 
-def get_files_info(files):
-    info = []
-    for f in files:
-        f_path = os.path.join(STORAGE_DIR, f)
-        f_info = get_file_info(f_path, f)
-        info.append(f_info)
-    return info
+# def get_files_info(files, node_files):
+#     info = []
+#     for file_name in files:
+#         if file_name in node_files:
+#             f_info = node_files[file_name]
+#         else:
+#             f_path = os.path.join(STORAGE_DIR, file_name)
+#             f_info = get_file_info(f_path, file_name)
+#         info.append(f_info)
+#     return info
+def get_files_info(files, node_files):
+    return [node_files[f_name] for f_name in files if f_name in node_files]
 
 
 def format_download_rate(download_rate):

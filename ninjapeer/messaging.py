@@ -1,3 +1,5 @@
+import itertools
+
 __author__ = 'jkozlowicz'
 
 from twisted.internet import protocol, task
@@ -96,6 +98,24 @@ class MessagingProtocol(protocol.DatagramProtocol):
             })
             self.transport.write(msg, (addr, MSG_PORT))
 
+    def update_node_files(self):
+        stale_files = file_sharing.get_stale_files(self.node.files)
+        for stale_file in stale_files:
+            del self.node.files[stale_file]
+        missing_files = file_sharing.get_missing_files(self.node.files)
+        missing_files_info = file_sharing.get_files_info(missing_files)
+        key = lambda f: f['name']
+        missing_files_info_sorted = sorted(
+            missing_files_info, key=key
+        )
+        grouped_missing_files = {}
+        for file_name, file_info in itertools.groupby(
+                missing_files_info_sorted, key=key):
+            grouped_missing_files[file_name] = list(file_info)
+        self.node.files = dict(
+            self.node.files.items() + grouped_missing_files.items()
+        )
+
     def query_received(self, addr, datagram):
         print 'Received QUERY'
         host, port = addr
@@ -103,7 +123,12 @@ class MessagingProtocol(protocol.DatagramProtocol):
         matching_files = file_sharing.get_matching_files(datagram['QUERY'])
         if matching_files:
             print 'Sending MATCH'
-            files_info = file_sharing.get_files_info(matching_files)
+
+            self.update_node_files()
+
+            files_info = file_sharing.get_files_info(
+                matching_files, self.node.files
+            )
             print 'Sending query further'
             msg = json.dumps({
                 'MSG': 'MATCH',

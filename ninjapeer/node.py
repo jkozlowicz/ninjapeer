@@ -30,6 +30,8 @@ class NinjaNode(object):
         self.transfers = {}
         self.queries = {}
         self.starting = True
+        self.files = {}
+
         self.startup()
 
     def startup(self):
@@ -65,6 +67,7 @@ class NinjaNode(object):
                 transfer.owners_to_use = copy.deepcopy(transfer.owners)
                 transfers[file_hash] = transfer
         node_state = {
+            'files': self.files,
             'peers': self.peers,
             'routing_table': self.routing_table,
             'id': self.id,
@@ -78,6 +81,7 @@ class NinjaNode(object):
             f = open(STATE_FILE_PATH, 'rb')
             node_state = pickle.load(f)
             self.peers = node_state['peers']
+            self.files = node_state['files']
             self.routing_table = node_state['routing_table']
             self.id = node_state['id']
             self.transfers = node_state['transfers']
