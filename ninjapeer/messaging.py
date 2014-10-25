@@ -125,8 +125,6 @@ class MessagingProtocol(protocol.DatagramProtocol):
             print 'Sending MATCH'
 
             self.update_node_files()
-            from pprint import pprint
-            pprint(self.node.files)
 
             files_info = file_sharing.get_matching_files_info(
                 matching_files, self.node.files
