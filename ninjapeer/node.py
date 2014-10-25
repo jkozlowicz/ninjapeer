@@ -53,8 +53,8 @@ class NinjaNode(object):
                 self.routing_table[addressee] = intermediaries
 
     def save_state(self):
-        transfers = []
-        for transfer in self.transfers.values():
+        transfers = {}
+        for file_hash, transfer in self.transfers.items():
             if transfer.deferred is not None:
                 transfer.deferred.cancel()
             transfer.deferred = None
@@ -62,7 +62,7 @@ class NinjaNode(object):
             transfer.aggregated_hash = None
             transfer.download_rate_loop = None
             transfer.owners_to_use = copy.deepcopy(transfer.owners)
-            transfers.append(transfer)
+            transfers[file_hash] = transfer
         node_state = {
             'peers': self.peers,
             'routing_table': self.routing_table,
