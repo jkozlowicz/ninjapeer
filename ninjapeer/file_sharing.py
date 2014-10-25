@@ -176,10 +176,12 @@ class Transfer(object):
 
         self.deferred = None
         self.proxy = None
-        self.download_rate_loop = task.LoopingCall(self.update_timers)
+        self.download_rate_loop = None
         # self.aggregated_hash = hashlib.md5()
 
     def start_download_rate_loop(self, now=False):
+        if self.download_rate_loop is None:
+            self.download_rate_loop = task.LoopingCall(self.update_timers)
         self.download_rate_loop.start(
             DOWNLOAD_RATE_UPDATE_INTERVAL, now=now
         )
@@ -262,29 +264,30 @@ class Downloader(object):
         # self.node.interface.start_displaying_download_progress()
 
     def request_next_chunk(self, transfer):
-        if transfer.proxy is None:
+        try:
+            if transfer.owner_being_used is None:
+                transfer.owner_being_used = transfer.owners_to_use.pop()
             try:
-                if transfer.owner_being_used is None:
-                    transfer.owner_being_used = transfer.owners_to_use.pop()
-                try:
-                    intermediaries = self.node.routing_table.get(
-                        transfer.owner_being_used, []
-                    )[:]
-                    transfer.intermediary_being_used = intermediaries.pop()
-                    transfer.proxy = Proxy(
-                        'http://' + ':'.join(
-                            [transfer.intermediary_being_used, str(RPC_PORT)]
-                        )
+                intermediaries = self.node.routing_table.get(
+                    transfer.owner_being_used, []
+                )[:]
+                transfer.intermediary_being_used = intermediaries.pop()
+                transfer.proxy = Proxy(
+                    'http://' + ':'.join(
+                        [transfer.intermediary_being_used, str(RPC_PORT)]
                     )
-                except IndexError:
-                    transfer.intermediary_being_used = None
-                    self.request_next_chunk(transfer)
-                    return
-                    #Tried to download the file from the owner using all
-                    #known intermediaries known for that NODE_ID
+                )
             except IndexError:
-                #Tried to download the file from all owners of this file
+                print 'Tried to download the file from all intermediaries'
+                transfer.owner_being_used = None
+                transfer.intermediary_being_used = None
+                self.request_next_chunk(transfer)
                 return
+                #Tried to download the file from the owner using all
+                #known intermediaries known for that NODE_ID
+        except IndexError:
+            print 'Tried to download the file from all owners of this file'
+            return
 
         transfer.deferred = transfer.proxy.callRemote(
             'get_file_chunk',
@@ -349,7 +352,8 @@ class Downloader(object):
 
     def pause_transfer(self, file_hash):
         transfer = self.node.transfers[file_hash]
-        transfer.deferred.pause()
+        if transfer.deferred is not None:
+            transfer.deferred.pause()
         transfer.status = 'PAUSED'
         transfer.stop_download_rate_loop()
         transfer.download_rate = 0.0
@@ -358,17 +362,21 @@ class Downloader(object):
 
     def resume_transfer(self, file_hash):
         transfer = self.node.transfers[file_hash]
-        transfer.deferred.unpause()
         transfer.status = 'DOWNLOADING'
         transfer.paused_time += (time.time() - transfer.paused_time_temp)
         transfer.start_download_rate_loop(now=True)
+        if transfer.deferred is not None:
+            transfer.deferred.unpause()
+        else:
+            self.request_next_chunk(transfer)
 
     def remove_transfer(self, file_hash):
         transfer = self.node.transfers[file_hash]
-        transfer.deferred.cancel()
+        if transfer.deferred is not None:
+            transfer.deferred.cancel()
         transfer.stop_download_rate_loop()
         os.remove(transfer.path)
-        self.node.transfers[file_hash] = None
+        del self.node.transfers[file_hash]
 
 
 def chunk_to_pass_arrived(result):

@@ -97,10 +97,9 @@ class WebInterfaceProtocol(protocol.Protocol):
     def __init__(self, factory):
         self.factory = factory
         self.factory.client = self
-        self.factory.node.interface.start_displaying_download_progress()
 
     def connectionMade(self):
-        pass
+        self.factory.node.interface.start_displaying_download_progress()
 
     def dataReceived(self, data):
         rcvd_data = json.loads(data)
