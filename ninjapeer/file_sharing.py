@@ -1,3 +1,5 @@
+import xmlrpclib
+
 __author__ = 'jkozlowicz'
 import copy
 
@@ -351,7 +353,7 @@ class Downloader(object):
         )
 
     def chunk_failed(self, failure, transfer):
-        reason = 'other'
+        reason = None
         if isinstance(failure.value, xmlrpc.Fault):
             if failure.value.faultCode == FILE_MISSING_CODE:
                 transfer.owner_being_used = None
@@ -372,8 +374,8 @@ class Downloader(object):
                 del self.node.routing_table[transfer.owner_being_used]
             del self.node.peers[transfer.intermediary_being_used]
         print 'chunk failed, reason: %s' % reason
-        self.request_next_chunk(transfer)
-        # except xmlrpclib.ProtocolError as err:
+        if reason is not None:
+            self.request_next_chunk(transfer)
 
     @staticmethod
     def if_checksum_matches(checksum, chunk_data):

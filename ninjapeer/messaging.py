@@ -13,7 +13,7 @@ import json
 import uuid
 
 MSG_PORT = 8890
-PING_INTERVAL = 0.1
+PING_INTERVAL = 0.2
 MIN_PEER_NUM = 1
 
 
