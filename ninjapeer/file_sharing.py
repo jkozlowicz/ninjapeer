@@ -197,6 +197,10 @@ class Transfer(object):
         self.download_rate_loop = None
         # self.aggregated_hash = hashlib.md5()
 
+    def update_owners(self, owner):
+        self.owners.append(owner)
+        self.owners_to_use = copy.deepcopy(self.owners)
+
     def start_download_rate_loop(self, now=False):
         if self.download_rate_loop is None:
             self.download_rate_loop = task.LoopingCall(self.update_timers)

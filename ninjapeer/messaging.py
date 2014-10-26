@@ -233,7 +233,7 @@ class MessagingProtocol(protocol.DatagramProtocol):
         file_hash = datagram['HASH']
         transfer = self.node.transfers.get(file_hash, None)
         if transfer is not None and transfer.peers_lacking:
-            transfer.owners.append(datagram['NODE_ID'])
+            transfer.update_owners(datagram['NODE_ID'])
             self.node.downloader.retry_transfer(transfer)
         for peer in self.node.peers:
             self.transport.write(json.dumps(datagram), (peer, MSG_PORT))
