@@ -87,3 +87,15 @@ class NinjaNode(object):
             self.transfers = node_state['transfers']
         except (IOError, EOFError):
             pass
+
+    def add_node_file(self, transfer):
+        self.files[transfer.file_name] = {
+            'hash': transfer.hash,
+            'name': transfer.file_name,
+            'pieces': transfer.pieces,
+            'size': transfer.size
+        }
+
+    def delete_node_file(self, transfer):
+        if transfer.file_name in self.files:
+            del self.files[transfer.file_names]

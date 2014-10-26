@@ -82,6 +82,10 @@ class MessagingProtocol(protocol.DatagramProtocol):
                     self.query_received(addr, datagram)
                 elif datagram['MSG'] == 'MATCH':
                     self.match_received(addr, datagram)
+                if datagram['MSG'] == 'INTERESTED':
+                    self.interested_received(addr, datagram)
+                elif datagram['MSG'] == 'HAVE':
+                    self.have_received(addr, datagram)
 
     def start_pinging(self):
         print 'Starting PING service'
@@ -193,3 +197,45 @@ class MessagingProtocol(protocol.DatagramProtocol):
     def download_requested(self, file_info):
         print 'Download requested'
         self.node.downloader.init_download(file_info['hash'])
+
+    def send_interested(self, file_name, file_hash):
+        print 'Sending INTERESTED'
+        msg_id = uuid.uuid4().get_hex()
+        msg = json.dumps({
+            'MSG': 'INTERESTED',
+            'HASH': file_hash,
+            'FILE_NAME': file_name,
+            'NODE_ID': self.node.id,
+            'MSG_ID': msg_id
+        })
+        for peer in self.node.peers:
+            self.transport.write(msg, (peer, MSG_PORT))
+
+    def interested_received(self, addr, datagram):
+        print 'Received INTERESTED'
+        host, port = addr
+        matching_file = self.node.files.get(datagram['FILE_NAME'], None)
+        if matching_file and matching_file['hash'] == datagram['HASH']:
+            msg_id = uuid.uuid4().get_hex()
+            msg = json.dumps({
+                'MSG': 'HAVE',
+                'HASH': datagram['HASH'],
+                'FILE_NAME': datagram['FILE_NAME'],
+                'NODE_ID': self.node.id,
+                'MSG_ID': msg_id
+            })
+            self.transport.write(msg, (host, MSG_PORT))
+        for peer in self.node.peers:
+            self.transport.write(json.dumps(datagram), (peer, MSG_PORT))
+
+    def have_received(self, addr, datagram):
+        print 'Received HAVE'
+        file_hash = datagram['HASH']
+        transfer = self.nodes.transfer.get(file_hash, None)
+        if transfer is not None and transfer.owners_lacking:
+            transfer.owners.append(datagram['NODE_ID'])
+            self.node.downloader.retry_transfer(transfer)
+        for peer in self.node.peers:
+            self.transport.write(json.dumps(datagram), (peer, MSG_PORT))
+
+

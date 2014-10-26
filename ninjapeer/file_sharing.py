@@ -27,6 +27,7 @@ DATE_TIME_FORMAT = '%Y-%m-%d %H:%M'
 MAX_ETA = 60*60*24*30
 FILE_MISSING_CODE = 100
 NO_ROUTE_CODE = 101
+REFRESH_OWNERS_INTERVAL = 5
 
 
 def read_chunks(file_obj):
@@ -183,6 +184,7 @@ class Transfer(object):
         self.added_on = datetime.datetime.now().strftime(DATE_TIME_FORMAT)
         self.path = os.path.join(TEMP_DIR, self.file_name)
         self.progress = 0.0
+        self.owners_lacking = False
 
         self.owners = owners
         self.owners_to_use = copy.deepcopy(owners)
@@ -244,11 +246,33 @@ class Downloader(object):
     def __init__(self, node):
         self.node = node
         self.node.downloader = self
+        self.owners_refresh_loop = None
+
         if self.node.starting:
             for file_hash, transfer in self.node.transfers.items():
                 if transfer.status == 'DOWNLOADING':
                     self.download(transfer.file_info, transfer.owners)
             self.node.starting = False
+
+    def refresh_owners(self):
+        for file_hash, transfer in self.node.transfers.items():
+            if transfer.status == 'DOWNLOADING' and transfer.owners_lacking:
+                self.node.msg_service.send_interested(
+                    transfer.file_name,
+                    transfer.hash
+                )
+
+    def start_refresh_owners_loop(self):
+        if self.owners_refresh_loop is None:
+            self.owners_refresh_loop = task.LoopingCall(
+                self.refresh_owners
+            )
+        if not self.owners_refresh_loop.running:
+            self.owners_refresh_loop.start(REFRESH_OWNERS_INTERVAL, now=True)
+
+    def stop_refresh_owners_loop(self):
+        if self.owners_refresh_loop is not None:
+            self.owners_refresh_loop.stop()
 
     def init_download(self, file_hash):
         owners = []
@@ -265,7 +289,7 @@ class Downloader(object):
     def download(self, file_info, owners):
         file_hash = file_info['hash']
         if file_hash in self.node.transfers and not self.node.starting:
-            print 'File already downloaded'
+            print 'File already being downloaded'
             return
         elif file_hash in self.node.transfers and self.node.starting:
             transfer = self.node.transfers[file_hash]
@@ -277,7 +301,9 @@ class Downloader(object):
             self.node.transfers[file_hash] = transfer
         self.request_next_chunk(transfer)
         transfer.start_download_rate_loop()
-        # self.node.interface.start_displaying_download_progress()
+
+    def retry_transfer(self, transfer):
+        self.request_next_chunk(transfer)
 
     def request_next_chunk(self, transfer):
         try:
@@ -303,6 +329,7 @@ class Downloader(object):
                 #known intermediaries known for that NODE_ID
         except IndexError:
             print 'Tried to download the file from all owners of this file'
+            self.start_refresh_owners_loop()
             return
 
         transfer.deferred = transfer.proxy.callRemote(
@@ -365,6 +392,7 @@ class Downloader(object):
         else:
             print 'File %s assembled successfully' % transfer.file_name
             transfer.finalize()
+            self.node.add_node_file(transfer)
 
     def pause_transfer(self, file_hash):
         transfer = self.node.transfers[file_hash]
@@ -390,9 +418,9 @@ class Downloader(object):
         transfer = self.node.transfers[file_hash]
         if transfer.deferred is not None:
             transfer.deferred.cancel()
-        transfer.stop_download_rate_loop()
         os.remove(transfer.path)
         del self.node.transfers[file_hash]
+        self.node.delete_node_file(transfer)
 
 
 def chunk_to_pass_arrived(result):

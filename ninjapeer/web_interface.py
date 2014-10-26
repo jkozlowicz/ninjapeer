@@ -118,7 +118,7 @@ class WebInterfaceProtocol(protocol.Protocol):
         elif action == 'RESUME':
             self.factory.node.downloader.resume_transfer(val)
         elif action == 'REMOVE':
-            self.factory.node.downloader.pause_transfer(val)
+            self.factory.node.downloader.remove_transfer(val)
         else:
             pass
 
