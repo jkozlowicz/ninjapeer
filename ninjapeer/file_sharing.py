@@ -184,7 +184,7 @@ class Transfer(object):
         self.added_on = datetime.datetime.now().strftime(DATE_TIME_FORMAT)
         self.path = os.path.join(TEMP_DIR, self.file_name)
         self.progress = 0.0
-        self.owners_lacking = False
+        self.peers_lacking = False
 
         self.owners = owners
         self.owners_to_use = copy.deepcopy(owners)
@@ -256,7 +256,7 @@ class Downloader(object):
 
     def refresh_owners(self):
         for file_hash, transfer in self.node.transfers.items():
-            if transfer.status == 'DOWNLOADING' and transfer.owners_lacking:
+            if transfer.status == 'DOWNLOADING' and transfer.peers_lacking:
                 self.node.msg_service.send_interested(
                     transfer.file_name,
                     transfer.hash
@@ -329,6 +329,7 @@ class Downloader(object):
                 #known intermediaries known for that NODE_ID
         except IndexError:
             print 'Tried to download the file from all owners of this file'
+            transfer.peers_lacking = True
             self.start_refresh_owners_loop()
             return
 
