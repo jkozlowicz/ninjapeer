@@ -2,8 +2,9 @@ __author__ = 'jkozlowicz'
 
 from django.conf import settings
 
-from file_sharing import convert_bytes, format_download_rate, format_eta, \
-    format_time
+from file_sharing import (
+    convert_bytes, format_download_rate, format_eta, format_time
+)
 
 from util import TEMPLATE_DIRS, STATIC_PATH
 

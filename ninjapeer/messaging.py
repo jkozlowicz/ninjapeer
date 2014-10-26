@@ -13,7 +13,7 @@ import json
 import uuid
 
 MSG_PORT = 8890
-PING_INTERVAL = 0.2
+PING_INTERVAL = 1
 MIN_PEER_NUM = 1
 
 
@@ -29,7 +29,7 @@ class MessagingProtocol(protocol.DatagramProtocol):
         self.ping_loop = task.LoopingCall(self.send_ping)
         self.start_pinging()
         # task2 = task.LoopingCall(self.display_connections)
-        # task2.start(7, now=False)
+        # task2.start(5, now=False)
 
     def display_connections(self):
         print '============================'
@@ -38,7 +38,7 @@ class MessagingProtocol(protocol.DatagramProtocol):
         print 'queries: %s' % self.node.queries
         print 'host: %s' % self.node.host
         print 'node id: %s' % self.node.id
-        # print 'last query result: \n%s' % self.node.last_query_result
+        print 'last query result: \n%s' % self.node.last_query_result
 
     def ping_received(self, addr):
         host, port = addr

@@ -22,7 +22,6 @@ function onOpen(e) {
 }
 
 function onMessage(e) {
-//    console.log(e.data);
     var msg = $.parseJSON(e.data);
     if(msg.event == 'MATCH'){
 

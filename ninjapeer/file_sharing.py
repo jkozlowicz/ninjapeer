@@ -1,9 +1,7 @@
-import xmlrpclib
-
 __author__ = 'jkozlowicz'
 import copy
 
-from util import STORAGE_DIR, APP_DATA_DIR, TEMP_DIR, STATE_FILE_PATH
+from util import STORAGE_DIR, APP_DATA_DIR, TEMP_DIR
 
 from twisted.web import xmlrpc
 from twisted.web.xmlrpc import Proxy, withRequest
@@ -435,6 +433,11 @@ def chunk_to_pass_arrived(result):
     return result
 
 
+def get_file_chunk_errback(failure):
+    print failure
+    return failure
+
+
 class FileSharingService(xmlrpc.XMLRPC):
     def __init__(self, *args, **kwargs):
         self.requests = []
@@ -468,7 +471,7 @@ class FileSharingService(xmlrpc.XMLRPC):
                         file_name,
                         chunk_num
                     )
-                    d.addCallback(lambda res: res)
+                    d.addCallbacks(lambda res: res, get_file_chunk_errback)
                     return d
             raise xmlrpc.Fault(
                 NO_ROUTE_CODE, "No route found for %s." % owner_id
