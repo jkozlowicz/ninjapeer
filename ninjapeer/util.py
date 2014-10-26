@@ -50,8 +50,6 @@ class AddressService(object):
     def generate_addresses(self):
         #convert to generator later
         self.hosts = ('192.168.1.' + str(digit) for digit in range(1, 254))
-        self.hosts = list(self.hosts)
-        self.hosts = ['192.168.1.107'] + self.hosts
 
     def shuffle_hosts(self):
         random.shuffle(self.hosts)
