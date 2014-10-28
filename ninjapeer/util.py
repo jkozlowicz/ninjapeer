@@ -42,16 +42,17 @@ def get_machine_ip():
 
 
 class AddressService(object):
-    def __init__(self):
+    def __init__(self, local_subnet):
         self.hosts = None
+        self.local_subnet = local_subnet
         self.generate_addresses()
         self.shuffle_hosts()
 
     def generate_addresses(self):
-        #convert to generator later
-        self.hosts = ('192.168.1.' + str(digit) for digit in range(1, 254))
+        subnet_parts = self.local_subnet.split('.')
+        subnet_prefix = '.'.join(subnet_parts[:-1]+[''])
+        self.hosts = (subnet_prefix + str(digit) for digit in range(1, 254))
         self.hosts = list(self.hosts)
-        # self.hosts = ['192.168.1.107'] + self.hosts
 
     def shuffle_hosts(self):
         random.shuffle(self.hosts)

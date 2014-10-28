@@ -13,7 +13,7 @@ import json
 import uuid
 
 MSG_PORT = 8890
-PING_INTERVAL = 1
+PING_INTERVAL = 0.1
 MIN_PEER_NUM = 1
 
 
@@ -21,7 +21,7 @@ class MessagingProtocol(protocol.DatagramProtocol):
     def __init__(self, node):
         self.node = node
         self.node.msg_service = self
-        self.address_service = AddressService()
+        self.address_service = AddressService(node.host)
         self.ping_loop = None
 
     def startProtocol(self):

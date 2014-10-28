@@ -98,4 +98,4 @@ class NinjaNode(object):
 
     def delete_node_file(self, transfer):
         if transfer.file_name in self.files:
-            del self.files[transfer.file_names]
+            del self.files[transfer.file_name]
